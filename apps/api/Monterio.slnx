@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Monterio.API/Monterio.API.csproj" />
+  <Project Path="Monterio.Application/Monterio.Application.csproj" />
+  <Project Path="Monterio.Domain/Monterio.Domain.csproj" />
+  <Project Path="Monterio.Infrastructure/Monterio.Infrastructure.csproj" />
+</Solution>

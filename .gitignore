@@ -1,0 +1,20 @@
+# .NET
+apps/api/**/bin/
+apps/api/**/obj/
+apps/api/**/uploads/
+apps/api/**/appsettings.Local.json
+
+# Node / Next.js
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/.env.local
+
+# IDE
+.vs/
+.vscode/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db

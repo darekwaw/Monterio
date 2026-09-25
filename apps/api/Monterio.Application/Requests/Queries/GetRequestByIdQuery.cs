@@ -1,0 +1,65 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Monterio.Application.Common.Interfaces;
+
+namespace Monterio.Application.Requests.Queries;
+
+public record GetRequestByIdQuery(int Id) : IRequest<RequestDetailDto?>;
+
+public record RequestActivityTaskDto(
+    int Id, string Description, bool IsDone, int SortOrder,
+    int? MeasurementAttributeId, string? MeasurementAttributeName, string? Unit,
+    decimal? MinValue, decimal? MaxValue,
+    decimal? MeasuredValueDecimal, string? MeasuredValueText, bool? MeasuredValueBoolean,
+    DateTime? MeasuredValueDate, DateTime? MeasuredAt, string? MeasuredBy);
+
+public record RequestActivityDto(int Id, string Name, bool IsFinished, List<RequestActivityTaskDto> Tasks);
+
+public record RequestAttachmentDto(int Id, string FileName, string ContentType, long FileSize,
+    string UploadedByName, DateTime CreatedAt);
+
+public record RequestDetailDto(
+    int Id, string Number, int CompanyId, int CustomerId, string CustomerName, string? CustomerPhone,
+    int? LocationId, string? LocationName, string? Description, DateTime? ScheduledDate,
+    int Status, string StatusName,
+    int? ServiceGroupId, string? ServiceGroupName, int? ContractorId, string? ContractorName,
+    int? EmployeeId, string? EmployeeName, DateTime CreatedAt,
+    List<RequestActivityDto> Activities, List<RequestAttachmentDto> Attachments);
+
+public class GetRequestByIdQueryHandler(IApplicationDbContext db) : IRequestHandler<GetRequestByIdQuery, RequestDetailDto?>
+{
+    public async Task<RequestDetailDto?> Handle(GetRequestByIdQuery request, CancellationToken ct)
+    {
+        var r = await db.Requests
+            .Include(x => x.Customer)
+            .Include(x => x.Location)
+            .Include(x => x.ServiceGroup)
+            .Include(x => x.Contractor)
+            .Include(x => x.Employee)
+            .Include(x => x.Activities).ThenInclude(a => a.Tasks).ThenInclude(t => t.MeasurementAttribute)
+            .Include(x => x.Attachments).ThenInclude(a => a.UploadedByEmployee)
+            .FirstOrDefaultAsync(x => x.Id == request.Id, ct);
+
+        if (r is null) return null;
+
+        return new RequestDetailDto(
+            r.Id, r.Number, r.CompanyId, r.CustomerId, r.Customer.Name, r.Customer.Phone,
+            r.LocationId, r.Location?.Name, r.Description, r.ScheduledDate,
+            (int)r.Status, r.Status.ToString(),
+            r.ServiceGroupId, r.ServiceGroup?.Name, r.ContractorId, r.Contractor?.Name,
+            r.EmployeeId, r.Employee?.FullName, r.CreatedAt,
+            r.Activities.Select(a => new RequestActivityDto(
+                a.Id, a.Name, a.IsFinished,
+                a.Tasks.OrderBy(t => t.SortOrder).Select(t => new RequestActivityTaskDto(
+                    t.Id, t.Description, t.IsDone, t.SortOrder,
+                    t.MeasurementAttributeId, t.MeasurementAttribute?.Name, t.MeasurementAttribute?.Unit,
+                    t.MeasurementAttribute?.MinValue, t.MeasurementAttribute?.MaxValue,
+                    t.MeasuredValueDecimal, t.MeasuredValueText, t.MeasuredValueBoolean,
+                    t.MeasuredValueDate, t.MeasuredAt, t.MeasuredBy
+                )).ToList()
+            )).ToList(),
+            r.Attachments.OrderByDescending(a => a.CreatedAt).Select(a => new RequestAttachmentDto(
+                a.Id, a.FileName, a.ContentType, a.FileSize, a.UploadedByEmployee.FullName, a.CreatedAt
+            )).ToList());
+    }
+}

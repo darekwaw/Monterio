@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Monterio Web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3010,
+      "autoPort": true,
+      "cwd": "C:\\Projekty\\Monterio\\apps\\web"
+    },
+    {
+      "name": "Monterio API",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Monterio.API\\Monterio.API.csproj"],
+      "port": 5020,
+      "autoPort": true,
+      "cwd": "C:\\Projekty\\Monterio\\apps\\api"
+    }
+  ]
+}

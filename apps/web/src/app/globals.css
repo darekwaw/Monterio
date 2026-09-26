@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f7;
+  --foreground: #1c1917;
+
+  /* Ink — sidebar/chrome, ciemny, ciepły charcoal (nie czysty czarny) */
+  --ink-950: #14120f;
+  --ink-900: #1c1917;
+  --ink-800: #292521;
+  --ink-700: #3a352f;
+  --ink-600: #524b42;
+
+  /* Accent — brąz/bursztyn, nawiązanie do drewna (drzwi/podłogi), nie generyczny SaaS-blue */
+  --accent-50: #fdf6ec;
+  --accent-100: #f8e8cc;
+  --accent-400: #cf9548;
+  --accent-500: #b7791f;
+  --accent-600: #96591a;
+  --accent-700: #7a4715;
+
+  /* Neutralne — stone (cieplejsze niż zinc/gray), spójne z paletą */
+  --stone-50: #fafaf9;
+  --stone-100: #f5f4f2;
+  --stone-200: #e7e4e0;
+  --stone-300: #d3cec7;
+  --stone-400: #a39c92;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+
+  --success: #15803d;
+  --success-bg: #f0fdf4;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+
+  --radius-card: 0.875rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+
+  --color-stone-50: var(--stone-50);
+  --color-stone-100: var(--stone-100);
+  --color-stone-200: var(--stone-200);
+  --color-stone-300: var(--stone-300);
+  --color-stone-400: var(--stone-400);
+  --color-stone-500: var(--stone-500);
+  --color-stone-600: var(--stone-600);
+  --color-stone-700: var(--stone-700);
+  --color-stone-800: var(--stone-800);
+  --color-stone-900: var(--stone-900);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  ::selection {
+    background: var(--accent-100);
+    color: var(--accent-700);
+  }
+}

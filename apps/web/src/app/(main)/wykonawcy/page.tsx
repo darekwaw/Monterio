@@ -6,7 +6,7 @@ import {
   useAddContractorToGroup, useRemoveContractorFromGroup,
 } from '@/hooks/useServiceGroups';
 import { useLocations } from '@/hooks/useLocations';
-import { useEmployees, useCreateEmployee } from '@/hooks/useEmployees';
+import { useEmployees, useCreateEmployee, useSetEmployeePin } from '@/hooks/useEmployees';
 import { COMPANY_ID } from '@/lib/constants';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -18,26 +18,55 @@ import { Dialog } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AddressFields, addressDtoToForm, addressFormToDto, emptyAddress, type AddressFormValue } from '@/components/common/address-fields';
 import { Stars } from '@/components/ui/stars';
-import { Briefcase, Users2, Plus, X, UserPlus, Pencil } from 'lucide-react';
+import { Briefcase, Users2, Plus, X, UserPlus, Pencil, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from '@/lib/toast';
 import type { Contractor, ServiceGroup } from '@/types';
 
 function ContractorEmployees({ contractorId }: { contractorId: number }) {
   const { data: employees } = useEmployees({ contractorId });
   const createMut = useCreateEmployee();
+  const pinMut = useSetEmployeePin();
   const [adding, setAdding] = useState(false);
   const [fullName, setFullName] = useState('');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [pinEditId, setPinEditId] = useState<number | null>(null);
+  const [pin, setPin] = useState('');
 
   return (
     <div className="mt-2 space-y-1 pl-4">
       {employees?.map(e => (
-        <div key={e.id} className="flex items-center justify-between gap-2 py-0.5 text-xs text-stone-500">
-          <span className="flex items-center gap-2">
-            <span className="h-1 w-1 shrink-0 rounded-full bg-stone-300" /> {e.fullName} <span className="text-stone-300">· {e.loginIdentifier}</span>
-          </span>
-          {e.averageRating != null && <Stars value={e.averageRating} showCount count={e.ratingCount} />}
+        <div key={e.id}>
+          <div className="flex items-center justify-between gap-2 py-0.5 text-xs text-stone-500">
+            <span className="flex items-center gap-2">
+              <span className="h-1 w-1 shrink-0 rounded-full bg-stone-300" /> {e.fullName} <span className="text-stone-300">· {e.loginIdentifier}</span>
+            </span>
+            <div className="flex items-center gap-2">
+              {e.averageRating != null && <Stars value={e.averageRating} showCount count={e.ratingCount} />}
+              <button
+                onClick={() => { setPinEditId(v => v === e.id ? null : e.id); setPin(''); }}
+                className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-600"
+                title="Ustaw PIN (logowanie w aplikacji mobilnej)"
+              >
+                <KeyRound className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+          {pinEditId === e.id && (
+            <div className="flex items-center gap-1.5 py-1 pl-3">
+              <Input
+                value={pin} onChange={ev => setPin(ev.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="PIN (4-6 cyfr)" className="h-7 w-28 text-xs"
+              />
+              <Button size="sm" disabled={pin.length < 4 || pinMut.isPending} onClick={async () => {
+                await pinMut.mutateAsync({ id: e.id, newPin: pin });
+                toast('PIN ustawiony.', 'success');
+                setPinEditId(null); setPin('');
+              }}>Zapisz</Button>
+              <Button size="sm" variant="ghost" onClick={() => setPinEditId(null)}>Anuluj</Button>
+            </div>
+          )}
         </div>
       ))}
       {adding ? (

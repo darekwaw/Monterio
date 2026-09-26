@@ -7,7 +7,7 @@ using Monterio.Application.Common.Interfaces;
 namespace Monterio.Application.Requests.Queries;
 
 public record GetRequestsQuery(
-    int CompanyId, RequestStatus? Status = null, int? ServiceGroupId = null, int? ContractorId = null,
+    int? CompanyId = null, RequestStatus? Status = null, int? ServiceGroupId = null, int? ContractorId = null,
     int? EmployeeId = null, string? Search = null, int Page = 1, int PageSize = 50)
     : IRequest<PagedResult<RequestListItemDto>>;
 
@@ -24,7 +24,8 @@ public class GetRequestsQueryHandler(IApplicationDbContext db)
         var page = request.Page < 1 ? 1 : request.Page;
         var pageSize = Math.Clamp(request.PageSize, 1, 200);
 
-        var query = db.Requests.Where(r => r.CompanyId == request.CompanyId);
+        var query = db.Requests.AsQueryable();
+        if (request.CompanyId.HasValue) query = query.Where(r => r.CompanyId == request.CompanyId.Value);
         if (request.Status.HasValue) query = query.Where(r => r.Status == request.Status.Value);
         if (request.ServiceGroupId.HasValue) query = query.Where(r => r.ServiceGroupId == request.ServiceGroupId.Value);
         if (request.ContractorId.HasValue) query = query.Where(r => r.ContractorId == request.ContractorId.Value);

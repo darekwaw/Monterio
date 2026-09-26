@@ -42,3 +42,11 @@ export function useSetEmployeePassword() {
     },
   });
 }
+
+export function useSetEmployeePin() {
+  return useMutation({
+    mutationFn: async ({ id, newPin }: { id: number; newPin: string }) => {
+      await apiClient.put(`/api/employees/${id}/pin`, { newPin });
+    },
+  });
+}

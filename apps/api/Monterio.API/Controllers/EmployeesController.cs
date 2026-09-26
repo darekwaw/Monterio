@@ -37,7 +37,15 @@ public class EmployeesController(ISender sender) : ControllerBase
         await sender.Send(new SetEmployeePasswordCommand(id, body.NewPassword), ct);
         return NoContent();
     }
+
+    [HttpPut("{id:int}/pin")]
+    public async Task<IActionResult> SetPin(int id, [FromBody] SetEmployeePinRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetEmployeePinCommand(id, body.NewPin), ct);
+        return NoContent();
+    }
 }
 
 public record UpdateEmployeeRequest(string FullName, string? Phone, string? Email, bool IsActive);
 public record SetEmployeePasswordRequest(string NewPassword);
+public record SetEmployeePinRequest(string NewPin);

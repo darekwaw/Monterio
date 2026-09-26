@@ -37,3 +37,28 @@ public class LoginCommandHandler(IApplicationDbContext db, IPasswordHasher hashe
             employee.CompanyId, employee.ContractorId);
     }
 }
+
+/// <summary>Logowanie PIN-em — tylko instalatorzy (mobile). PIN ustawia dyspozytor z poziomu web
+/// (Wykonawcy → instalator → "Ustaw PIN"), instalator się nim tylko loguje.</summary>
+public record LoginByPinCommand(string LoginIdentifier, string Pin) : IRequest<LoginResult>;
+
+public class LoginByPinCommandHandler(IApplicationDbContext db, IPasswordHasher hasher, IJwtTokenService jwt)
+    : IRequestHandler<LoginByPinCommand, LoginResult>
+{
+    public async Task<LoginResult> Handle(LoginByPinCommand request, CancellationToken ct)
+    {
+        var login = request.LoginIdentifier.Trim().ToLowerInvariant();
+        var employee = await db.Employees
+            .FirstOrDefaultAsync(e => e.LoginIdentifier == login && e.IsActive && !e.IsDeleted, ct);
+
+        if (employee is null || employee.ContractorId is null || employee.PinHash is null
+            || !hasher.Verify(request.Pin, employee.PinHash))
+            return new LoginResult(false, "Nieprawidłowy login lub PIN.", null, 0, null, null, null, null, null);
+
+        var token = jwt.GenerateToken(employee.Id, employee.FullName, employee.LoginIdentifier,
+            employee.CompanyId, employee.ContractorId, "Installer");
+
+        return new LoginResult(true, null, token, 480, employee.Id, employee.FullName, "Installer",
+            employee.CompanyId, employee.ContractorId);
+    }
+}

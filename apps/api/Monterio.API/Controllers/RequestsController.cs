@@ -23,6 +23,20 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
         => Ok(await sender.Send(new GetRequestsQuery(
             companyId, status, serviceGroupId, contractorId, employeeId, search, page, pageSize), ct));
 
+    /// <summary>Zlecenia przypisane do ZALOGOWANEGO instalatora — dla mobile. Filtr po EmployeeId
+    /// bierzemy z tokenu (currentUser), nie z parametru zapytania, żeby nikt nie mógł podejrzeć
+    /// cudzych przypisań podmieniając id w query stringu.</summary>
+    [HttpGet("mine")]
+    public async Task<IActionResult> GetMine(
+        [FromQuery] RequestStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var employeeId = currentUser.EmployeeId
+            ?? throw new InvalidOperationException("Brak zalogowanego pracownika.");
+        return Ok(await sender.Send(new GetRequestsQuery(
+            EmployeeId: employeeId, Status: status, Page: page, PageSize: pageSize), ct));
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {

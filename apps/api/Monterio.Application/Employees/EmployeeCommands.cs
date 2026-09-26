@@ -60,3 +60,25 @@ public class SetEmployeePasswordCommandHandler(IApplicationDbContext db, IPasswo
         await db.SaveChangesAsync(ct);
     }
 }
+
+/// <summary>PIN — logowanie w aplikacji mobilnej instalatora, ustawiane przez dyspozytora w
+/// panelu Wykonawcy (instalator sam sobie PIN-u nie zakłada, przynajmniej nie w v1).</summary>
+public record SetEmployeePinCommand(int Id, string NewPin) : IRequest;
+
+public class SetEmployeePinCommandHandler(IApplicationDbContext db, IPasswordHasher hasher)
+    : IRequestHandler<SetEmployeePinCommand>
+{
+    public async Task Handle(SetEmployeePinCommand request, CancellationToken ct)
+    {
+        if (request.NewPin.Length is < 4 or > 6 || !request.NewPin.All(char.IsDigit))
+            throw new InvalidOperationException("PIN musi mieć 4-6 cyfr.");
+
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == request.Id, ct)
+            ?? throw new InvalidOperationException($"Employee {request.Id} not found.");
+        if (employee.ContractorId is null)
+            throw new InvalidOperationException("PIN dotyczy tylko instalatorów (ContractorId ustawione).");
+
+        employee.SetPin(hasher.Hash(request.NewPin));
+        await db.SaveChangesAsync(ct);
+    }
+}

@@ -1,3 +1,4 @@
+using Monterio.Application.Common.Dtos;
 using Monterio.Application.Common.Interfaces;
 using Monterio.Application.Requests.Commands;
 using Monterio.Application.Requests.Queries;
@@ -36,7 +37,7 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
             ?? throw new InvalidOperationException("Brak zalogowanego pracownika.");
         var id = await sender.Send(new CreateRequestCommand(
             body.CompanyId, body.CustomerId, employeeId, body.Description, body.LocationId,
-            body.ScheduledDate, body.ServiceCatalogItemIds), ct);
+            body.ScheduledDate, body.ServiceCatalogItemIds, body.Address), ct);
         return Ok(new { id });
     }
 
@@ -75,6 +76,27 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
         return NoContent();
     }
 
+    [HttpPut("{id:int}/completion-date")]
+    public async Task<IActionResult> SetCompletionDate(int id, [FromBody] SetCompletionDateRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetCompletionDateCommand(id, body.CompletionDate), ct);
+        return NoContent();
+    }
+
+    [HttpPut("{id:int}/rating")]
+    public async Task<IActionResult> SetRating(int id, [FromBody] SetRequestRatingRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetRequestRatingCommand(id, body.Rating, body.Comment), ct);
+        return NoContent();
+    }
+
+    [HttpPut("{id:int}/address")]
+    public async Task<IActionResult> SetAddress(int id, [FromBody] SetRequestAddressRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetRequestAddressCommand(id, body.Address), ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:int}/activities/{activityId:int}/tasks/{taskId:int}/toggle")]
     public async Task<IActionResult> ToggleTask(int id, int activityId, int taskId, CancellationToken ct)
     {
@@ -105,14 +127,33 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
             id, file.FileName, file.ContentType, stream.ToArray(), employeeId), ct);
         return Ok(new { id = attachmentId });
     }
+
+    [HttpGet("{id:int}/attachments/{attachmentId:int}")]
+    public async Task<IActionResult> DownloadAttachment(int id, int attachmentId, CancellationToken ct)
+    {
+        var result = await sender.Send(new Monterio.Application.Requests.Queries.GetAttachmentQuery(id, attachmentId), ct);
+        return result is null ? NotFound() : File(result.Content, result.ContentType, result.FileName);
+    }
+
+    [HttpGet("{id:int}/protocol.pdf")]
+    public async Task<IActionResult> DownloadProtocol(int id, CancellationToken ct)
+    {
+        var result = await sender.Send(new Monterio.Application.Requests.Queries.GetRequestProtocolQuery(id), ct);
+        return result is null
+            ? NotFound(new { message = "Brak domyślnego, aktywnego szablonu wydruku. Zdefiniuj szablon w Szablonach wydruku." })
+            : File(result.Content, "application/pdf", result.FileName);
+    }
 }
 
 public record CreateRequestRequest(
     int CompanyId, int CustomerId, string? Description, int? LocationId, DateTime? ScheduledDate,
-    IReadOnlyList<int>? ServiceCatalogItemIds = null);
+    IReadOnlyList<int>? ServiceCatalogItemIds = null, AddressDto? Address = null);
 public record AddRequestActivityRequest(int ServiceCatalogItemId);
 public record AssignRequestRequest(int? ServiceGroupId, int? ContractorId, int? EmployeeId);
 public record ChangeStatusRequest(RequestStatus Status);
 public record SetScheduledDateRequest(DateTime? ScheduledDate);
+public record SetCompletionDateRequest(DateTime? CompletionDate);
+public record SetRequestAddressRequest(AddressDto? Address);
+public record SetRequestRatingRequest(int? Rating, string? Comment = null);
 public record CompleteMeasurementRequest(
     decimal? ValueDecimal = null, string? ValueText = null, bool? ValueBoolean = null, DateTime? ValueDate = null);

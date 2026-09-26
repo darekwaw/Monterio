@@ -30,6 +30,14 @@ public class EmployeesController(ISender sender) : ControllerBase
         await sender.Send(new UpdateEmployeeCommand(id, body.FullName, body.Phone, body.Email, body.IsActive), ct);
         return NoContent();
     }
+
+    [HttpPut("{id:int}/password")]
+    public async Task<IActionResult> SetPassword(int id, [FromBody] SetEmployeePasswordRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetEmployeePasswordCommand(id, body.NewPassword), ct);
+        return NoContent();
+    }
 }
 
 public record UpdateEmployeeRequest(string FullName, string? Phone, string? Email, bool IsActive);
+public record SetEmployeePasswordRequest(string NewPassword);

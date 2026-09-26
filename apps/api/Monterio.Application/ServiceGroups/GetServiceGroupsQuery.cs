@@ -31,7 +31,9 @@ public class GetServiceGroupsQueryHandler(IApplicationDbContext db) : IRequestHa
 
 public record GetServiceGroupMembersQuery(int ServiceGroupId) : IRequest<List<ContractorSummaryDto>>;
 
-public record ContractorSummaryDto(int Id, string Name, string? Phone, bool IsActive, int EmployeeCount);
+public record ContractorSummaryDto(
+    int Id, string Name, string? Phone, bool IsActive, int EmployeeCount,
+    decimal? AverageRating, int RatingCount);
 
 public class GetServiceGroupMembersQueryHandler(IApplicationDbContext db)
     : IRequestHandler<GetServiceGroupMembersQuery, List<ContractorSummaryDto>>
@@ -53,7 +55,18 @@ public class GetServiceGroupMembersQueryHandler(IApplicationDbContext db)
             .Select(g => new { ContractorId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ContractorId, x => x.Count, ct);
 
-        return contractors.Select(c => new ContractorSummaryDto(
-            c.Id, c.Name, c.Phone, c.IsActive, empCounts.GetValueOrDefault(c.Id))).ToList();
+        var ratings = await db.Requests
+            .Where(r => r.ContractorId != null && contractorIds.Contains(r.ContractorId.Value) && r.Rating != null)
+            .GroupBy(r => r.ContractorId)
+            .Select(g => new { ContractorId = g.Key!.Value, Average = g.Average(r => (decimal)r.Rating!.Value), Count = g.Count() })
+            .ToDictionaryAsync(g => g.ContractorId, ct);
+
+        return contractors.Select(c =>
+        {
+            ratings.TryGetValue(c.Id, out var rating);
+            return new ContractorSummaryDto(
+                c.Id, c.Name, c.Phone, c.IsActive, empCounts.GetValueOrDefault(c.Id),
+                rating?.Average, rating?.Count ?? 0);
+        }).ToList();
     }
 }

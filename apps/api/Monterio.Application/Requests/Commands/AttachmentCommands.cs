@@ -1,6 +1,7 @@
 using Monterio.Application.Common.Interfaces;
 using Monterio.Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Monterio.Application.Requests.Commands;
 
@@ -8,7 +9,7 @@ public record UploadAttachmentCommand(
     int RequestId, string FileName, string ContentType, byte[] Content, int UploadedByEmployeeId)
     : IRequest<int>;
 
-public class UploadAttachmentCommandHandler(IApplicationDbContext db, IFileStorageService storage)
+public class UploadAttachmentCommandHandler(IApplicationDbContext db, IFileStorageService storage, IRequestHubService hubService)
     : IRequestHandler<UploadAttachmentCommand, int>
 {
     public async Task<int> Handle(UploadAttachmentCommand request, CancellationToken ct)
@@ -21,6 +22,9 @@ public class UploadAttachmentCommandHandler(IApplicationDbContext db, IFileStora
 
         await db.RequestAttachments.AddAsync(attachment, ct);
         await db.SaveChangesAsync(ct);
+
+        var companyId = await db.Requests.Where(r => r.Id == request.RequestId).Select(r => r.CompanyId).FirstAsync(ct);
+        await hubService.NotifyRequestChanged(companyId, request.RequestId, ct);
         return attachment.Id;
     }
 }

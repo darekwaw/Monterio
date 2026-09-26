@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Monterio.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Monterio.Infrastructure.Persistence;
 namespace Monterio.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925171357_AddRequestRating")]
+    partial class AddRequestRating
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -867,22 +870,6 @@ namespace Monterio.Infrastructure.Migrations
                     b.ToTable("RequestAttachments");
                 });
 
-            modelBuilder.Entity("Monterio.Domain.Entities.RequestNumberCounter", b =>
-                {
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LastNumber")
-                        .HasColumnType("int");
-
-                    b.HasKey("CompanyId", "Year");
-
-                    b.ToTable("RequestNumberCounters");
-                });
-
             modelBuilder.Entity("Monterio.Domain.Entities.ServiceActivity", b =>
                 {
                     b.Property<int>("Id")
@@ -1292,15 +1279,6 @@ namespace Monterio.Infrastructure.Migrations
                     b.Navigation("Request");
 
                     b.Navigation("UploadedByEmployee");
-                });
-
-            modelBuilder.Entity("Monterio.Domain.Entities.RequestNumberCounter", b =>
-                {
-                    b.HasOne("Monterio.Domain.Entities.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Monterio.Domain.Entities.ServiceActivity", b =>

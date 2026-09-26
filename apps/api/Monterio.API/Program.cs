@@ -51,6 +51,18 @@ else
                 NameClaimType = "sub",
                 RoleClaimType = "role",
             };
+            // SignalR nie może wysłać nagłówka Authorization przy handshake WebSocket —
+            // token trafia w query stringu, tylko dla ścieżek /hubs.
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var token = ctx.Request.Query["access_token"];
+                    if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        ctx.Token = token;
+                    return Task.CompletedTask;
+                }
+            };
         });
 }
 builder.Services.AddAuthorization();
@@ -124,6 +136,7 @@ app.UseCors("MonterioPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<Monterio.Infrastructure.SignalR.MonterioHub>("/hubs/monterio");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -136,5 +149,9 @@ using (var scope = app.Services.CreateScope())
 
 if (Environment.GetEnvironmentVariable("MONTERIO_MIGRATE_ONLY") == "true")
     return;
+
+// Pre-warm Chromium pobierany przez PuppeteerSharp (generowanie PDF protokołów) w tle,
+// żeby pierwsze żądanie druku nie czekało na pobranie przeglądarki.
+_ = Task.Run(() => new PuppeteerSharp.BrowserFetcher().DownloadAsync());
 
 app.Run();

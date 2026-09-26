@@ -12,7 +12,8 @@ public record GetRequestsQuery(
     : IRequest<PagedResult<RequestListItemDto>>;
 
 public record RequestListItemDto(
-    int Id, string Number, string CustomerName, DateTime? ScheduledDate, int Status, string StatusName,
+    int Id, string Number, string CustomerName, DateTime? ScheduledDate, DateTime? CompletionDate,
+    int Status, string StatusName,
     string? ServiceGroupName, string? ContractorName, string? EmployeeName, DateTime CreatedAt);
 
 public class GetRequestsQueryHandler(IApplicationDbContext db)
@@ -42,7 +43,7 @@ public class GetRequestsQueryHandler(IApplicationDbContext db)
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(r => new RequestListItemDto(
-                r.Id, r.Number, r.Customer.Name, r.ScheduledDate, (int)r.Status, r.Status.ToString(),
+                r.Id, r.Number, r.Customer.Name, r.ScheduledDate, r.CompletionDate, (int)r.Status, r.Status.ToString(),
                 r.ServiceGroup != null ? r.ServiceGroup.Name : null,
                 r.Contractor != null ? r.Contractor.Name : null,
                 r.Employee != null ? r.Employee.FullName : null,

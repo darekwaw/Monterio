@@ -8,7 +8,8 @@ public record GetEmployeesQuery(int? CompanyId = null, int? ContractorId = null,
     : IRequest<List<EmployeeDto>>;
 
 public record EmployeeDto(int Id, int? CompanyId, int? ContractorId, string FullName,
-    string LoginIdentifier, string? Phone, string? Email, bool IsActive);
+    string LoginIdentifier, string? Phone, string? Email, bool IsActive,
+    decimal? AverageRating, int RatingCount);
 
 public class GetEmployeesQueryHandler(IApplicationDbContext db) : IRequestHandler<GetEmployeesQuery, List<EmployeeDto>>
 {
@@ -20,7 +21,19 @@ public class GetEmployeesQueryHandler(IApplicationDbContext db) : IRequestHandle
         if (request.OnlyActive) query = query.Where(e => e.IsActive);
 
         var employees = await query.OrderBy(e => e.FullName).ToListAsync(ct);
-        return employees.Select(e => new EmployeeDto(
-            e.Id, e.CompanyId, e.ContractorId, e.FullName, e.LoginIdentifier, e.Phone, e.Email, e.IsActive)).ToList();
+
+        var ratings = await db.Requests
+            .Where(r => r.EmployeeId != null && r.Rating != null)
+            .GroupBy(r => r.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key!.Value, Average = g.Average(r => (decimal)r.Rating!.Value), Count = g.Count() })
+            .ToDictionaryAsync(g => g.EmployeeId, ct);
+
+        return employees.Select(e =>
+        {
+            ratings.TryGetValue(e.Id, out var rating);
+            return new EmployeeDto(
+                e.Id, e.CompanyId, e.ContractorId, e.FullName, e.LoginIdentifier, e.Phone, e.Email, e.IsActive,
+                rating?.Average, rating?.Count ?? 0);
+        }).ToList();
     }
 }

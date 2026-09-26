@@ -1,6 +1,7 @@
 using Monterio.Application.Common.Interfaces;
 using Monterio.Infrastructure.Persistence;
 using Monterio.Infrastructure.Services;
+using Monterio.Infrastructure.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,10 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+        services.AddSingleton<IPdfRenderer, PuppeteerPdfRenderer>();
+        services.AddSignalR();
+        services.AddScoped<IRequestHubService, RequestHubService>();
+        services.AddScoped<IRequestNumberGenerator, RequestNumberGenerator>();
 
         services.AddScoped<AppDbContextSeeder>();
 

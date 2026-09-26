@@ -1,3 +1,5 @@
+using Monterio.Application.Common;
+using Monterio.Application.Common.Dtos;
 using Monterio.Application.Common.Interfaces;
 using Monterio.Domain.Entities;
 using MediatR;
@@ -8,16 +10,15 @@ namespace Monterio.Application.Requests.Commands;
 public record CreateRequestCommand(
     int CompanyId, int CustomerId, int CreatedByEmployeeId,
     string? Description = null, int? LocationId = null, DateTime? ScheduledDate = null,
-    IReadOnlyList<int>? ServiceCatalogItemIds = null) : IRequest<int>;
+    IReadOnlyList<int>? ServiceCatalogItemIds = null, AddressDto? Address = null) : IRequest<int>;
 
-public class CreateRequestCommandHandler(IApplicationDbContext db, ISender sender)
+public class CreateRequestCommandHandler(
+    IApplicationDbContext db, ISender sender, IRequestHubService hubService, IRequestNumberGenerator numberGenerator)
     : IRequestHandler<CreateRequestCommand, int>
 {
     public async Task<int> Handle(CreateRequestCommand request, CancellationToken ct)
     {
-        var year = DateTime.UtcNow.Year;
-        var countThisYear = await db.Requests.CountAsync(r => r.Number.StartsWith($"ZL/{year}/"), ct);
-        var number = $"ZL/{year}/{(countThisYear + 1):D4}";
+        var number = await numberGenerator.NextNumberAsync(request.CompanyId, ct);
 
         var effectiveLocationId = request.LocationId;
         if (!effectiveLocationId.HasValue)
@@ -32,17 +33,25 @@ public class CreateRequestCommandHandler(IApplicationDbContext db, ISender sende
         await db.Requests.AddAsync(req, ct);
         await db.SaveChangesAsync(ct);
 
+        if (request.Address is not null)
+        {
+            req.SetAddress(await AddressHelper.UpsertAsync(db, null, request.Address, ct));
+            await db.SaveChangesAsync(ct);
+        }
+
         if (request.ServiceCatalogItemIds is { Count: > 0 })
             foreach (var itemId in request.ServiceCatalogItemIds)
                 await sender.Send(new AddActivityToRequestCommand(req.Id, itemId), ct);
 
+        await hubService.NotifyRequestChanged(req.CompanyId, req.Id, ct);
         return req.Id;
     }
 }
 
 public record AddActivityToRequestCommand(int RequestId, int ServiceCatalogItemId) : IRequest<int>;
 
-public class AddActivityToRequestCommandHandler(IApplicationDbContext db) : IRequestHandler<AddActivityToRequestCommand, int>
+public class AddActivityToRequestCommandHandler(IApplicationDbContext db, IRequestHubService hubService)
+    : IRequestHandler<AddActivityToRequestCommand, int>
 {
     public async Task<int> Handle(AddActivityToRequestCommand request, CancellationToken ct)
     {
@@ -61,13 +70,17 @@ public class AddActivityToRequestCommandHandler(IApplicationDbContext db) : IReq
             activity.Tasks.Add(RequestActivityTask.Create(activity.Id, act.Name, act.SortOrder, act.MeasurementAttributeId));
 
         await db.SaveChangesAsync(ct);
+
+        var companyId = await db.Requests.Where(r => r.Id == request.RequestId).Select(r => r.CompanyId).FirstAsync(ct);
+        await hubService.NotifyRequestChanged(companyId, request.RequestId, ct);
         return activity.Id;
     }
 }
 
 public record RemoveActivityCommand(int RequestId, int ActivityId) : IRequest;
 
-public class RemoveActivityCommandHandler(IApplicationDbContext db) : IRequestHandler<RemoveActivityCommand>
+public class RemoveActivityCommandHandler(IApplicationDbContext db, IRequestHubService hubService)
+    : IRequestHandler<RemoveActivityCommand>
 {
     public async Task Handle(RemoveActivityCommand request, CancellationToken ct)
     {
@@ -76,5 +89,8 @@ public class RemoveActivityCommandHandler(IApplicationDbContext db) : IRequestHa
             ?? throw new InvalidOperationException($"Activity {request.ActivityId} not found.");
         db.RequestActivities.Remove(activity);
         await db.SaveChangesAsync(ct);
+
+        var companyId = await db.Requests.Where(r => r.Id == request.RequestId).Select(r => r.CompanyId).FirstAsync(ct);
+        await hubService.NotifyRequestChanged(companyId, request.RequestId, ct);
     }
 }

@@ -26,6 +26,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserSe
     public DbSet<RequestActivityTask> RequestActivityTasks => Set<RequestActivityTask>();
     public DbSet<RequestAttachment> RequestAttachments => Set<RequestAttachment>();
     public DbSet<PrintTemplate> PrintTemplates => Set<PrintTemplate>();
+    public DbSet<RequestNumberCounter> RequestNumberCounters => Set<RequestNumberCounter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

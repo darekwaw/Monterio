@@ -6,17 +6,19 @@ namespace Monterio.Application.Requests.Commands;
 
 public record ToggleTaskCommand(int RequestId, int ActivityId, int TaskId) : IRequest;
 
-public class ToggleTaskCommandHandler(IApplicationDbContext db) : IRequestHandler<ToggleTaskCommand>
+public class ToggleTaskCommandHandler(IApplicationDbContext db, IRequestHubService hubService)
+    : IRequestHandler<ToggleTaskCommand>
 {
     public async Task Handle(ToggleTaskCommand request, CancellationToken ct)
     {
         var task = await db.RequestActivityTasks
-            .Include(t => t.Activity)
+            .Include(t => t.Activity).ThenInclude(a => a.Request)
             .FirstOrDefaultAsync(t => t.Id == request.TaskId && t.RequestActivityId == request.ActivityId
                 && t.Activity.RequestId == request.RequestId, ct)
             ?? throw new InvalidOperationException($"Task {request.TaskId} not found.");
         task.ToggleDone();
         await db.SaveChangesAsync(ct);
+        await hubService.NotifyRequestChanged(task.Activity.Request.CompanyId, request.RequestId, ct);
     }
 }
 
@@ -29,13 +31,14 @@ public record CompleteMeasurementTaskCommand(
 
 public record CompleteMeasurementTaskResult(bool IsDone, bool IsOutOfRange);
 
-public class CompleteMeasurementTaskCommandHandler(IApplicationDbContext db, ICurrentUserService currentUser)
+public class CompleteMeasurementTaskCommandHandler(
+    IApplicationDbContext db, ICurrentUserService currentUser, IRequestHubService hubService)
     : IRequestHandler<CompleteMeasurementTaskCommand, CompleteMeasurementTaskResult>
 {
     public async Task<CompleteMeasurementTaskResult> Handle(CompleteMeasurementTaskCommand cmd, CancellationToken ct)
     {
         var task = await db.RequestActivityTasks
-            .Include(t => t.Activity)
+            .Include(t => t.Activity).ThenInclude(a => a.Request)
             .Include(t => t.MeasurementAttribute)
             .FirstOrDefaultAsync(t => t.Id == cmd.TaskId && t.RequestActivityId == cmd.ActivityId
                 && t.Activity.RequestId == cmd.RequestId, ct)
@@ -53,6 +56,7 @@ public class CompleteMeasurementTaskCommandHandler(IApplicationDbContext db, ICu
             currentUser.FullName ?? currentUser.LoginIdentifier);
         await db.SaveChangesAsync(ct);
 
+        await hubService.NotifyRequestChanged(task.Activity.Request.CompanyId, cmd.RequestId, ct);
         return new CompleteMeasurementTaskResult(task.IsDone, isOutOfRange);
     }
 }

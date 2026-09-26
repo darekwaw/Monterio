@@ -46,3 +46,17 @@ public class UpdateEmployeeCommandHandler(IApplicationDbContext db) : IRequestHa
         await db.SaveChangesAsync(ct);
     }
 }
+
+public record SetEmployeePasswordCommand(int Id, string NewPassword) : IRequest;
+
+public class SetEmployeePasswordCommandHandler(IApplicationDbContext db, IPasswordHasher hasher)
+    : IRequestHandler<SetEmployeePasswordCommand>
+{
+    public async Task Handle(SetEmployeePasswordCommand request, CancellationToken ct)
+    {
+        var employee = await db.Employees.FirstOrDefaultAsync(e => e.Id == request.Id, ct)
+            ?? throw new InvalidOperationException($"Employee {request.Id} not found.");
+        employee.SetPassword(hasher.Hash(request.NewPassword));
+        await db.SaveChangesAsync(ct);
+    }
+}

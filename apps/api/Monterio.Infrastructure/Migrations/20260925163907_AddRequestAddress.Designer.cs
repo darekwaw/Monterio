@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Monterio.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Monterio.Infrastructure.Persistence;
 namespace Monterio.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925163907_AddRequestAddress")]
+    partial class AddRequestAddress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -570,9 +573,6 @@ namespace Monterio.Infrastructure.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("ContractorId")
                         .HasColumnType("int");
 
@@ -611,12 +611,6 @@ namespace Monterio.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RatingComment")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -865,22 +859,6 @@ namespace Monterio.Infrastructure.Migrations
                     b.HasIndex("UploadedByEmployeeId");
 
                     b.ToTable("RequestAttachments");
-                });
-
-            modelBuilder.Entity("Monterio.Domain.Entities.RequestNumberCounter", b =>
-                {
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LastNumber")
-                        .HasColumnType("int");
-
-                    b.HasKey("CompanyId", "Year");
-
-                    b.ToTable("RequestNumberCounters");
                 });
 
             modelBuilder.Entity("Monterio.Domain.Entities.ServiceActivity", b =>
@@ -1292,15 +1270,6 @@ namespace Monterio.Infrastructure.Migrations
                     b.Navigation("Request");
 
                     b.Navigation("UploadedByEmployee");
-                });
-
-            modelBuilder.Entity("Monterio.Domain.Entities.RequestNumberCounter", b =>
-                {
-                    b.HasOne("Monterio.Domain.Entities.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Monterio.Domain.Entities.ServiceActivity", b =>

@@ -19,11 +19,21 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
         builder.HasOne(r => r.Customer).WithMany(c => c.Requests).HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.Location).WithMany().HasForeignKey(r => r.LocationId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(r => r.Address).WithMany().HasForeignKey(r => r.AddressId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.ServiceGroup).WithMany().HasForeignKey(r => r.ServiceGroupId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.Contractor).WithMany().HasForeignKey(r => r.ContractorId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.Employee).WithMany().HasForeignKey(r => r.EmployeeId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.CreatedByEmployee).WithMany().HasForeignKey(r => r.CreatedByEmployeeId)
             .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class RequestNumberCounterConfiguration : IEntityTypeConfiguration<RequestNumberCounter>
+{
+    public void Configure(EntityTypeBuilder<RequestNumberCounter> builder)
+    {
+        builder.HasKey(c => new { c.CompanyId, c.Year });
+        builder.HasOne<Company>().WithMany().HasForeignKey(c => c.CompanyId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 

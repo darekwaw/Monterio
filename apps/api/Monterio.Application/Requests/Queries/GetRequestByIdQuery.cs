@@ -35,7 +35,7 @@ public class GetRequestByIdQueryHandler(IApplicationDbContext db) : IRequestHand
     public async Task<RequestDetailDto?> Handle(GetRequestByIdQuery request, CancellationToken ct)
     {
         var r = await db.Requests
-            .Include(x => x.Customer)
+            .Include(x => x.Customer).ThenInclude(c => c.Address)
             .Include(x => x.Location)
             .Include(x => x.Address)
             .Include(x => x.ServiceGroup)
@@ -49,7 +49,7 @@ public class GetRequestByIdQueryHandler(IApplicationDbContext db) : IRequestHand
 
         return new RequestDetailDto(
             r.Id, r.Number, r.CompanyId, r.CustomerId, r.Customer.Name, r.Customer.Phone,
-            r.LocationId, r.Location?.Name, AddressHelper.ToDto(r.Address), r.Description,
+            r.LocationId, r.Location?.Name, AddressHelper.ToDto(r.Address ?? r.Customer.Address), r.Description,
             r.ScheduledDate, r.CompletionDate,
             (int)r.Status, r.Status.ToString(),
             r.ServiceGroupId, r.ServiceGroup?.Name, r.ContractorId, r.Contractor?.Name,

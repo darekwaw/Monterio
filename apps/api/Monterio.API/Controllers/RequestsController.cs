@@ -6,6 +6,7 @@ using Monterio.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace Monterio.API.Controllers;
 
@@ -13,7 +14,9 @@ namespace Monterio.API.Controllers;
 [ApiController]
 [Route("api/requests")]
 [Authorize]
-public class RequestsController(ISender sender, ICurrentUserService currentUser) : ControllerBase
+public class RequestsController(
+    ISender sender, ICurrentUserService currentUser, IRatingTokenService ratingTokenService, IConfiguration configuration)
+    : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -23,8 +26,17 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
         => Ok(await sender.Send(new GetRequestsQuery(
             companyId, status, serviceGroupId, contractorId, employeeId, search, page, pageSize), ct));
 
-    /// <summary>Zlecenia przypisane do ZALOGOWANEGO instalatora — dla mobile. Filtr po EmployeeId
-    /// bierzemy z tokenu (currentUser), nie z parametru zapytania, żeby nikt nie mógł podejrzeć
+    [HttpGet("analytics")]
+    public async Task<IActionResult> GetAnalytics(
+        [FromQuery] int companyId, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate,
+        [FromQuery] int? locationId, [FromQuery] int? serviceGroupId, [FromQuery] int? contractorId,
+        CancellationToken ct)
+        => Ok(await sender.Send(new GetRequestAnalyticsQuery(
+            companyId, fromDate, toDate, locationId, serviceGroupId, contractorId), ct));
+
+    /// <summary>Zlecenia widoczne dla ZALOGOWANEGO instalatora — dla mobile: "moje" (IsMine=true)
+    /// oraz pula do przejęcia (firma/grupa, IsMine=false, CanClaim=true). Employee/ContractorId
+    /// biorą się z tokenu (currentUser), nie z parametru zapytania, żeby nikt nie mógł podejrzeć
     /// cudzych przypisań podmieniając id w query stringu.</summary>
     [HttpGet("mine")]
     public async Task<IActionResult> GetMine(
@@ -33,8 +45,32 @@ public class RequestsController(ISender sender, ICurrentUserService currentUser)
     {
         var employeeId = currentUser.EmployeeId
             ?? throw new InvalidOperationException("Brak zalogowanego pracownika.");
-        return Ok(await sender.Send(new GetRequestsQuery(
-            EmployeeId: employeeId, Status: status, Page: page, PageSize: pageSize), ct));
+        return Ok(await sender.Send(new GetInstallerRequestsQuery(
+            employeeId, currentUser.ContractorId, status, page, pageSize), ct));
+    }
+
+    /// <summary>Instalator przejmuje zlecenie z puli (patrz GetMine/GetInstallerRequestsQuery).</summary>
+    [HttpPost("{id:int}/claim")]
+    public async Task<IActionResult> Claim(int id, CancellationToken ct)
+    {
+        var employeeId = currentUser.EmployeeId
+            ?? throw new InvalidOperationException("Brak zalogowanego pracownika.");
+        var contractorId = currentUser.ContractorId
+            ?? throw new InvalidOperationException("Tylko instalator (pracownik firmy wykonawczej) może przejmować zlecenia.");
+        await sender.Send(new ClaimRequestCommand(id, employeeId, contractorId), ct);
+        return NoContent();
+    }
+
+    /// <summary>Link do publicznej strony oceny (do wyświetlenia jako QR na ekranie instalatora,
+    /// patrz PublicRatingController) — token liczony deterministycznie z RequestId, nic nie trzeba
+    /// zapisywać w bazie.</summary>
+    [HttpGet("{id:int}/rating-link")]
+    public IActionResult GetRatingLink(int id)
+    {
+        var token = ratingTokenService.GenerateToken(id);
+        var baseUrl = configuration["RatingLink:WebBaseUrl"]?.TrimEnd('/')
+            ?? throw new InvalidOperationException("Brak RatingLink:WebBaseUrl w konfiguracji.");
+        return Ok(new { url = $"{baseUrl}/ocena/{id}?token={token}" });
     }
 
     [HttpGet("{id:int}")]

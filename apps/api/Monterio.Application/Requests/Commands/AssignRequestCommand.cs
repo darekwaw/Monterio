@@ -23,6 +23,36 @@ public class AssignRequestCommandHandler(IApplicationDbContext db, IRequestHubSe
     }
 }
 
+/// <summary>Instalator sam "przejmuje" zlecenie z puli (mobile) — bez konieczności, żeby
+/// dyspozytor ręcznie przypisał konkretną osobę. Dozwolone tylko gdy zlecenie jeszcze nie ma
+/// EmployeeId, ORAZ (jest już przypisane do jego firmy) ALBO (jest w puli grupy serwisowej, do
+/// której jego firma należy) — patrz GetInstallerRequestsQuery, ta sama reguła widoczności.</summary>
+public record ClaimRequestCommand(int RequestId, int EmployeeId, int ContractorId) : IRequest;
+
+public class ClaimRequestCommandHandler(IApplicationDbContext db, IRequestHubService hubService)
+    : IRequestHandler<ClaimRequestCommand>
+{
+    public async Task Handle(ClaimRequestCommand request, CancellationToken ct)
+    {
+        var req = await db.Requests.FirstOrDefaultAsync(r => r.Id == request.RequestId, ct)
+            ?? throw new InvalidOperationException($"Request {request.RequestId} not found.");
+
+        if (req.EmployeeId != null)
+            throw new InvalidOperationException("Zlecenie jest już przypisane do innego instalatora.");
+
+        var eligible = req.ContractorId == request.ContractorId
+            || (req.ContractorId == null && req.ServiceGroupId != null
+                && await db.ServiceGroupMembers.AnyAsync(
+                    m => m.ServiceGroupId == req.ServiceGroupId.Value && m.ContractorId == request.ContractorId, ct));
+        if (!eligible)
+            throw new InvalidOperationException("To zlecenie nie jest dostępne do przejęcia przez Twoją firmę.");
+
+        req.Assign(req.ServiceGroupId, request.ContractorId, request.EmployeeId);
+        await db.SaveChangesAsync(ct);
+        await hubService.NotifyRequestChanged(req.CompanyId, req.Id, ct);
+    }
+}
+
 public record ChangeRequestStatusCommand(int RequestId, Domain.Enums.RequestStatus Status) : IRequest;
 
 public class ChangeRequestStatusCommandHandler(IApplicationDbContext db, IRequestHubService hubService)

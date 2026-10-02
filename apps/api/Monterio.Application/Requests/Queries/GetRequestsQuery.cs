@@ -1,3 +1,5 @@
+using Monterio.Application.Common;
+using Monterio.Application.Common.Dtos;
 using Monterio.Application.Common.Models;
 using Monterio.Domain.Enums;
 using MediatR;
@@ -12,9 +14,11 @@ public record GetRequestsQuery(
     : IRequest<PagedResult<RequestListItemDto>>;
 
 public record RequestListItemDto(
-    int Id, string Number, string CustomerName, DateTime? ScheduledDate, DateTime? CompletionDate,
+    int Id, string Number, string CustomerName, string? CustomerPhone, AddressDto? Address,
+    DateTime? ScheduledDate, DateTime? CompletionDate,
     int Status, string StatusName,
-    string? ServiceGroupName, string? ContractorName, string? EmployeeName, DateTime CreatedAt);
+    string? ServiceGroupName, string? ContractorName, string? EmployeeName, DateTime CreatedAt,
+    bool IsMine = false, bool CanClaim = false);
 
 public class GetRequestsQueryHandler(IApplicationDbContext db)
     : IRequestHandler<GetRequestsQuery, PagedResult<RequestListItemDto>>
@@ -39,12 +43,16 @@ public class GetRequestsQueryHandler(IApplicationDbContext db)
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .Include(r => r.Customer).Include(r => r.ServiceGroup)
+            .Include(r => r.Customer).ThenInclude(c => c.Address)
+            .Include(r => r.Address)
+            .Include(r => r.ServiceGroup)
             .Include(r => r.Contractor).Include(r => r.Employee)
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(r => new RequestListItemDto(
-                r.Id, r.Number, r.Customer.Name, r.ScheduledDate, r.CompletionDate, (int)r.Status, r.Status.ToString(),
+                r.Id, r.Number, r.Customer.Name, r.Customer.Phone,
+                AddressHelper.ToDto(r.Address ?? r.Customer.Address),
+                r.ScheduledDate, r.CompletionDate, (int)r.Status, r.Status.ToString(),
                 r.ServiceGroup != null ? r.ServiceGroup.Name : null,
                 r.Contractor != null ? r.Contractor.Name : null,
                 r.Employee != null ? r.Employee.FullName : null,

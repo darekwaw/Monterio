@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddSignalR();
         services.AddScoped<IRequestHubService, RequestHubService>();
         services.AddScoped<IRequestNumberGenerator, RequestNumberGenerator>();
+        services.AddSingleton<IRatingTokenService, RatingTokenService>();
 
         services.AddScoped<AppDbContextSeeder>();
 

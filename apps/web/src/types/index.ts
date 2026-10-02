@@ -126,6 +126,49 @@ export const REQUEST_STATUS_COLORS: Record<number, string> = {
   1: '#78716c', 2: '#b7791f', 3: '#2563eb', 4: '#15803d', 5: '#b91c1c',
 };
 
+export interface RequestStatusBreakdown {
+  status: number;
+  statusName: string;
+  count: number;
+}
+
+export interface RequestMonthlyStat {
+  year: number;
+  month: number;
+  created: number;
+  completed: number;
+  onTime: number;
+  early: number;
+  late: number;
+}
+
+export interface ContractorAnalytics {
+  contractorId: number;
+  name: string;
+  requestCount: number;
+  averageRating: number | null;
+  ratingCount: number;
+}
+
+export interface EmployeeAnalytics {
+  employeeId: number;
+  name: string;
+  requestCount: number;
+  averageRating: number | null;
+  ratingCount: number;
+}
+
+export interface RequestAnalytics {
+  totalRequests: number;
+  statusBreakdown: RequestStatusBreakdown[];
+  monthly: RequestMonthlyStat[];
+  onTimeCount: number;
+  earlyCount: number;
+  lateCount: number;
+  contractorRanking: ContractorAnalytics[];
+  employeeRanking: EmployeeAnalytics[];
+}
+
 export interface RequestListItem {
   id: number;
   number: string;

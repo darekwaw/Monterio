@@ -4,12 +4,13 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useLogout } from '@/hooks/useAuth';
 import {
-  LayoutDashboard, ClipboardList, Users, MapPin, BookOpen, Briefcase, Hammer, LogOut, FileText, UserCog,
+  LayoutDashboard, ClipboardList, Users, MapPin, BookOpen, Briefcase, Hammer, LogOut, FileText, UserCog, BarChart3,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/zlecenia', label: 'Zlecenia', icon: ClipboardList },
+  { href: '/analizy', label: 'Analizy', icon: BarChart3 },
   { href: '/klienci', label: 'Klienci', icon: Users },
   { href: '/lokalizacje', label: 'Lokalizacje', icon: MapPin },
   { href: '/katalog', label: 'Katalog usług', icon: BookOpen },

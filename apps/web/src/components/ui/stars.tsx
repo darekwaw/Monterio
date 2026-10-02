@@ -1,7 +1,8 @@
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Wyłącznie do odczytu — ocenę wystawia się w aplikacji mobilnej, web ją tylko pokazuje. */
+/** Wyłącznie do odczytu — ocenę wystawia klient przez publiczny link/QR (patrz /ocena/[id]),
+ * nigdy z poziomu weba ani urządzenia instalatora — web ją tylko pokazuje. */
 export function Stars({ value, size = 'sm', showCount, count }: {
   value: number | null; size?: 'sm' | 'md'; showCount?: boolean; count?: number;
 }) {

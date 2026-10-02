@@ -10,6 +10,15 @@ apps/web/.next/
 apps/web/out/
 apps/web/.env.local
 
+# Expo / React Native (mobile)
+apps/mobile/node_modules/
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/web-build/
+apps/mobile/*.log
+apps/mobile/android/
+apps/mobile/ios/
+
 # IDE
 .vs/
 .vscode/

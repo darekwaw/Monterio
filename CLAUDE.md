@@ -178,11 +178,29 @@ tasks toggle/measurement, attachments upload/download, protocol.pdf), `PrintTemp
 
 ### Frontend (strony, `apps/web/src/app/(main)/`)
 `/` (Dashboard), `/zlecenia` (lista z wyszukiwaniem + kolumny Planowana/Faktyczna z plakietką
-różnicy dni, okno szczegółów z zakładkami Usługi/Załączniki), `/klienci`, `/lokalizacje` (drzewo,
-ikony edycji/dodawania na stałe widoczne, nie tylko na hover), `/katalog` (usługi+czynności+punkty
-pomiarowe, wszystko edytowalne), `/wykonawcy` (grupy serwisowe, firmy, instalatorzy — z gwiazdkami),
-`/pracownicy` (zarządzanie kontami dyspozytorów), `/szablony-wydruku` (CRUD + `RichTextEditor`
-WYSIWYG), `/login`.
+różnicy dni, okno szczegółów z zakładkami Usługi/Załączniki), `/analizy` (zob. niżej), `/klienci`,
+`/lokalizacje` (drzewo, ikony edycji/dodawania na stałe widoczne, nie tylko na hover), `/katalog`
+(usługi+czynności+punkty pomiarowe, wszystko edytowalne), `/wykonawcy` (grupy serwisowe, firmy,
+instalatorzy — z gwiazdkami), `/pracownicy` (zarządzanie kontami dyspozytorów), `/szablony-wydruku`
+(CRUD + `RichTextEditor` WYSIWYG), `/login`.
+
+### Analizy (2026-09-29) — świadomie NIE port CMMS-owego `/analytics`
+CMMS ma tam MTTR/MTBF/przeglądy wg cyklu — pojęcia oparte o Assety, których Monterio celowo nie ma.
+Monterio dostało własny, dobrany pod jego domenę odpowiednik:
+- Backend: `GET /api/requests/analytics` (`companyId`, `fromDate`, `toDate`, opcjonalnie
+  `locationId`/`serviceGroupId`/`contractorId`) → `GetRequestAnalyticsQuery`/`RequestAnalyticsDto`
+  (`Monterio.Application/Requests/Queries/GetRequestAnalyticsQuery.cs`). Zakres dat filtruje po
+  `Request.CreatedAt` (baza), miesięczne słupki grupują też po `CreatedAt`; "wykonane na czas/
+  wcześniej/opóźnione" liczone tylko dla zleceń ze statusem Wykonane, które mają OBIE daty
+  (`ScheduledDate`+`CompletionDate`) ustawione — reszta zleceń nie wchodzi do tego wskaźnika.
+  Filtr lokalizacji to dokładne dopasowanie `LocationId`, BEZ kaskadowania po drzewie (materialized
+  path) — świadome uproszczenie na start, do rozważenia jeśli klient zgłosi taką potrzebę.
+- Frontend: `/analizy` (`apps/web/src/app/(main)/analizy/page.tsx`), wykresy przez **recharts**
+  (nowa zależność, dodana specjalnie pod ten moduł — wcześniej żadnej biblioteki wykresów nie było).
+  Metryki: zlecenia utworzone/wykonane miesiąc do miesiąca, terminowość (pie), rozkład statusów
+  (pie, etykiety z `REQUEST_STATUS_LABELS`, NIE z surowego `enum.ToString()` z backendu — inaczej
+  "WTrakcie" zamiast "W trakcie"), ranking firm wykonawczych i instalatorów (liczba zleceń + średnia
+  ocena, reużywa `Stars`).
 
 ## Świadome uproszczenia względem CMMS (i dlaczego)
 - **Brak Asset/wyposażenia w ogóle.** Monterio nie śledzi zainstalowanego sprzętu — tylko

@@ -69,4 +69,9 @@ Wynik: `installer\build\Monterio-Setup-<wersja>.exe`. Wersja: `#define AppVersio
 
 ## Znane ograniczenia
 - Brak ról/RBAC, brak audytu — zgodnie z założeniem „Monterio ma zostać małe".
-- Uwierzytelnianie Windows do SQL wymaga loginu dla `NT AUTHORITY\SYSTEM` (usługa działa jako LocalSystem).
+- Uwierzytelnianie Windows do SQL wymaga loginu dla konta SYSTEM z rolą `dbcreator` (usługa działa
+  jako LocalSystem; nazwa konta zależy od języka Windows). Prościej: podaj w instalatorze login i
+  hasło SQL. Polecenie niezależne od języka:
+  ```
+  sqlcmd -S "localhost\SQLEXPRESS" -E -Q "DECLARE @n sysname = SUSER_SNAME(0x010100000000000512000000); DECLARE @q nvarchar(400); IF SUSER_ID(@n) IS NULL BEGIN SET @q = 'CREATE LOGIN ' + QUOTENAME(@n) + ' FROM WINDOWS'; EXEC(@q); END; SET @q = 'ALTER SERVER ROLE dbcreator ADD MEMBER ' + QUOTENAME(@n); EXEC(@q);"
+  ```

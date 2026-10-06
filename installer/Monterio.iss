@@ -58,7 +58,7 @@ procedure InitializeWizard;
 begin
   CfgPage := CreateInputQueryPage(wpSelectDir, 'Konfiguracja bazy i serwera',
     'Monterio wymaga Microsoft SQL Server (np. SQL Express). Baza zostanie utworzona automatycznie.',
-    'Zalecane logowanie SQL (login/hasło). Puste pola = uwierzytelnianie Windows, ale usługa działa jako LocalSystem i wymaga wtedy loginu SQL dla NT AUTHORITY\SYSTEM z prawem tworzenia baz.');
+    'Zalecane logowanie SQL (login/hasło). Puste pola = uwierzytelnianie Windows, ale usługa działa jako konto SYSTEM i wymaga wtedy loginu SQL dla tego konta z rolą dbcreator.');
   CfgPage.Add('Serwer SQL (np. localhost\SQLEXPRESS):', False);
   CfgPage.Add('Nazwa bazy danych:', False);
   CfgPage.Add('Login SQL (opcjonalnie):', False);
@@ -86,7 +86,12 @@ begin
     begin
       MsgBox('Uzupełnij serwer SQL, nazwę bazy, port i adres aplikacji.', mbError, MB_OK);
       Result := False;
-    end;
+    end
+    else if Trim(CfgPage.Values[2]) = '' then
+      // Usługa działa jako LocalSystem — bez loginu SQL baza zwykle się nie utworzy.
+      Result := MsgBox('Nie podano loginu SQL, więc zostanie użyte uwierzytelnianie Windows.' + #13#10#13#10 +
+        'Usługa Monterio działa jako konto SYSTEM (na polskim Windows: "ZARZĄDZANIE NT\SYSTEM"), które musi mieć na serwerze SQL login z rolą dbcreator — inaczej usługa nie utworzy bazy i się nie uruchomi.' + #13#10#13#10 +
+        'Zalecane: podaj login i hasło SQL.' + #13#10#13#10 + 'Kontynuować bez loginu SQL?', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
   end;
 end;
 

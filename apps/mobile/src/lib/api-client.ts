@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '@/lib/constants';
-import { getSession, clearSession } from '@/lib/auth-storage';
+import { getSession, clearSession, getServerUrl } from '@/lib/auth-storage';
 
 export { API_URL };
 
@@ -13,6 +13,7 @@ apiClient.interceptors.request.use(async (config) => {
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
   }
+  config.baseURL = (await getServerUrl()) ?? API_URL;
   const session = await getSession();
   if (session) config.headers.Authorization = `Bearer ${session.token}`;
   return config;

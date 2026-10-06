@@ -9,7 +9,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    // Jako usługa Windows katalog roboczy to System32 — content root musi wskazywać na katalog aplikacji
+    // (appsettings, wwwroot z frontendem).
+    ContentRootPath = AppContext.BaseDirectory,
+});
+builder.Host.UseWindowsService();
 
 builder.Configuration
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
@@ -132,11 +139,30 @@ if (!app.Environment.IsProduction())
 }
 
 app.UseMiddleware<Monterio.API.Middleware.ExceptionHandlingMiddleware>();
+
+// Frontend (statyczny eksport Next.js) w wwwroot — wersja instalacyjna: jeden proces, jeden port.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors("MonterioPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<Monterio.Infrastructure.SignalR.MonterioHub>("/hubs/monterio");
+
+// Strony frontendu: /zlecenia -> zlecenia/index.html, /ocena/<id> -> ocena/0/index.html (id czytane po stronie klienta).
+app.MapFallback(async ctx =>
+{
+    var path = ctx.Request.Path.Value ?? "/";
+    if (path.StartsWith("/api/") || path.StartsWith("/hubs/")) { ctx.Response.StatusCode = 404; return; }
+    var web = app.Environment.WebRootPath;
+    if (web is null) { ctx.Response.StatusCode = 404; return; } // dev: frontend działa osobno (next dev)
+    var rel = path.StartsWith("/ocena/") ? "ocena/0" : path.Trim('/');
+    var file = Path.Combine(web, rel, "index.html");
+    if (!File.Exists(file)) file = Path.Combine(web, "404.html");
+    if (!File.Exists(file)) { ctx.Response.StatusCode = 404; return; }
+    ctx.Response.ContentType = "text/html; charset=utf-8";
+    await ctx.Response.SendFileAsync(file);
+});
 
 using (var scope = app.Services.CreateScope())
 {
@@ -152,6 +178,7 @@ if (Environment.GetEnvironmentVariable("MONTERIO_MIGRATE_ONLY") == "true")
 
 // Pre-warm Chromium pobierany przez PuppeteerSharp (generowanie PDF protokołów) w tle,
 // żeby pierwsze żądanie druku nie czekało na pobranie przeglądarki.
-_ = Task.Run(() => new PuppeteerSharp.BrowserFetcher().DownloadAsync());
+if (string.IsNullOrWhiteSpace(builder.Configuration["Pdf:ChromePath"]))
+    _ = Task.Run(() => new PuppeteerSharp.BrowserFetcher().DownloadAsync());
 
 app.Run();

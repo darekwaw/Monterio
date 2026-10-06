@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { toast } from '@/lib/toast';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5020';
+// 'same-origin' (wersja instalacyjna) = adres względny; frontend jest serwowany przez to samo API.
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5020';
+export const API_URL = rawApiUrl === 'same-origin' ? '' : rawApiUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,

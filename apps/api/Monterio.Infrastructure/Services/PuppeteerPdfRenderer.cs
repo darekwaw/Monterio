@@ -11,7 +11,7 @@ namespace Monterio.Infrastructure.Services;
 /// dostaje tylko nową, lekką kartę (Page), a nie cały nowy proces Chromium. Bez tego setki
 /// równoległych wydruków (setki dyspozytorów) odpalałyby setki procesów Chromium naraz.
 /// Jeśli przeglądarka padnie (crash), IsConnected wykryje to i następne żądanie odpali ją ponownie.</summary>
-public class PuppeteerPdfRenderer : IPdfRenderer, IAsyncDisposable
+public class PuppeteerPdfRenderer(Microsoft.Extensions.Configuration.IConfiguration config) : IPdfRenderer, IAsyncDisposable
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
     private bool _browserFetched;
@@ -40,7 +40,8 @@ public class PuppeteerPdfRenderer : IPdfRenderer, IAsyncDisposable
         {
             if (_browser is { IsConnected: true }) return _browser;
 
-            if (!_browserFetched)
+            var chromePath = config["Pdf:ChromePath"];
+            if (string.IsNullOrWhiteSpace(chromePath) && !_browserFetched)
             {
                 await new BrowserFetcher().DownloadAsync();
                 _browserFetched = true;
@@ -49,6 +50,7 @@ public class PuppeteerPdfRenderer : IPdfRenderer, IAsyncDisposable
             _browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
+                ExecutablePath = string.IsNullOrWhiteSpace(chromePath) ? null : chromePath,
                 Args = ["--no-sandbox"],
             });
             return _browser;

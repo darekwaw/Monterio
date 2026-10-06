@@ -1,25 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/auth-context';
+import { getServerUrl, saveServerUrl } from '@/lib/auth-storage';
+import { API_URL } from '@/lib/constants';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [pin, setPin] = useState('');
+  const [serverUrl, setServerUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = loginIdentifier.trim().length > 0 && pin.length >= 4 && !isSubmitting;
+  useEffect(() => {
+    getServerUrl().then((u) => setServerUrl(u ?? API_URL));
+  }, []);
+
+  const canSubmit =
+    /^https?:\/\/.+/i.test(serverUrl.trim()) && loginIdentifier.trim().length > 0 && pin.length >= 4 && !isSubmitting;
 
   const onSubmit = async () => {
     if (!canSubmit) return;
     setError(null);
     setIsSubmitting(true);
     try {
+      await saveServerUrl(serverUrl);
       await login(loginIdentifier.trim(), pin);
       router.replace('/(main)/zlecenia');
     } catch (err: unknown) {
@@ -42,6 +51,17 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>Logowanie instalatora</Text>
 
         <View style={styles.form}>
+          <Text style={styles.label}>Adres serwera</Text>
+          <TextInput
+            value={serverUrl}
+            onChangeText={setServerUrl}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            placeholder="http://192.168.1.10:5020"
+            style={styles.input}
+          />
+
           <Text style={styles.label}>Login</Text>
           <TextInput
             value={loginIdentifier}

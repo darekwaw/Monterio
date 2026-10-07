@@ -1,6 +1,6 @@
 ; Instalator Monterio (Inno Setup 6). Budowanie: installer\build.ps1
 #define AppName "Monterio"
-#define AppVersion "1.0.0"
+#define AppVersion "1.2.0"
 #define ServiceName "Monterio"
 
 [Setup]

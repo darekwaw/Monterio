@@ -25,6 +25,8 @@ public class RequestConfiguration : IEntityTypeConfiguration<Request>
         builder.HasOne(r => r.Employee).WithMany().HasForeignKey(r => r.EmployeeId).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(r => r.CreatedByEmployee).WithMany().HasForeignKey(r => r.CreatedByEmployeeId)
             .OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(r => r.PrintTemplate).WithMany().HasForeignKey(r => r.PrintTemplateId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

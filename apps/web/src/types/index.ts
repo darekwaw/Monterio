@@ -243,6 +243,7 @@ export interface RequestDetail {
   createdAt: string;
   rating: number | null;
   ratingComment: string | null;
+  printTemplateId: number | null;
   activities: RequestActivityDetail[];
   attachments: RequestAttachment[];
 }

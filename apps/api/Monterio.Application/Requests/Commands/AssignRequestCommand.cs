@@ -115,6 +115,25 @@ public class SetRequestRatingCommandHandler(IApplicationDbContext db, IRequestHu
     }
 }
 
+/// <summary>Szablon protokołu dla zlecenia. PrintTemplateId=null wraca do domyślnego szablonu.</summary>
+public record SetRequestPrintTemplateCommand(int RequestId, int? PrintTemplateId) : IRequest;
+
+public class SetRequestPrintTemplateCommandHandler(IApplicationDbContext db, IRequestHubService hubService)
+    : IRequestHandler<SetRequestPrintTemplateCommand>
+{
+    public async Task Handle(SetRequestPrintTemplateCommand request, CancellationToken ct)
+    {
+        var req = await db.Requests.FirstOrDefaultAsync(r => r.Id == request.RequestId, ct)
+            ?? throw new InvalidOperationException($"Request {request.RequestId} not found.");
+        if (request.PrintTemplateId is { } templateId
+            && !await db.PrintTemplates.AnyAsync(t => t.Id == templateId && t.IsActive, ct))
+            throw new InvalidOperationException("Wybrany szablon wydruku nie istnieje lub jest nieaktywny.");
+        req.SetPrintTemplate(request.PrintTemplateId);
+        await db.SaveChangesAsync(ct);
+        await hubService.NotifyRequestChanged(req.CompanyId, req.Id, ct);
+    }
+}
+
 /// <summary>Adres wykonania zlecenia — niezależny od adresu klienta (np. nowa budowa pod innym
 /// adresem niż siedziba/adres korespondencyjny klienta). AddressDto=null czyści adres.</summary>
 public record SetRequestAddressCommand(int RequestId, AddressDto? Address) : IRequest;

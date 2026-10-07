@@ -27,7 +27,7 @@ public record RequestDetailDto(
     int Status, string StatusName,
     int? ServiceGroupId, string? ServiceGroupName, int? ContractorId, string? ContractorName,
     int? EmployeeId, string? EmployeeName, DateTime CreatedAt,
-    int? Rating, string? RatingComment,
+    int? Rating, string? RatingComment, int? PrintTemplateId,
     List<RequestActivityDto> Activities, List<RequestAttachmentDto> Attachments);
 
 public class GetRequestByIdQueryHandler(IApplicationDbContext db) : IRequestHandler<GetRequestByIdQuery, RequestDetailDto?>
@@ -54,7 +54,7 @@ public class GetRequestByIdQueryHandler(IApplicationDbContext db) : IRequestHand
             (int)r.Status, r.Status.ToString(),
             r.ServiceGroupId, r.ServiceGroup?.Name, r.ContractorId, r.Contractor?.Name,
             r.EmployeeId, r.Employee?.FullName, r.CreatedAt,
-            r.Rating, r.RatingComment,
+            r.Rating, r.RatingComment, r.PrintTemplateId,
             r.Activities.Select(a => new RequestActivityDto(
                 a.Id, a.Name, a.IsFinished,
                 a.Tasks.OrderBy(t => t.SortOrder).Select(t => new RequestActivityTaskDto(

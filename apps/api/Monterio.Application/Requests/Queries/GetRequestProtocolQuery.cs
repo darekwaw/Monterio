@@ -30,7 +30,11 @@ public partial class GetRequestProtocolQueryHandler(IApplicationDbContext db, IP
             .FirstOrDefaultAsync(x => x.Id == request.RequestId, ct);
         if (r is null) return null;
 
-        var template = await db.PrintTemplates.FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, ct);
+        // Szablon wybrany na zleceniu, o ile nadal aktywny; w przeciwnym razie domyślny aktywny.
+        var template = r.PrintTemplateId is { } chosenId
+            ? await db.PrintTemplates.FirstOrDefaultAsync(t => t.Id == chosenId && t.IsActive, ct)
+            : null;
+        template ??= await db.PrintTemplates.FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, ct);
         if (template is null) return null;
 
         var tokens = new Dictionary<string, string>

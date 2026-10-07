@@ -147,6 +147,13 @@ public class RequestsController(
         return NoContent();
     }
 
+    [HttpPut("{id:int}/print-template")]
+    public async Task<IActionResult> SetPrintTemplate(int id, [FromBody] SetRequestPrintTemplateRequest body, CancellationToken ct)
+    {
+        await sender.Send(new SetRequestPrintTemplateCommand(id, body.PrintTemplateId), ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:int}/activities/{activityId:int}/tasks/{taskId:int}/toggle")]
     public async Task<IActionResult> ToggleTask(int id, int activityId, int taskId, CancellationToken ct)
     {
@@ -204,6 +211,7 @@ public record ChangeStatusRequest(RequestStatus Status);
 public record SetScheduledDateRequest(DateTime? ScheduledDate);
 public record SetCompletionDateRequest(DateTime? CompletionDate);
 public record SetRequestAddressRequest(AddressDto? Address);
+public record SetRequestPrintTemplateRequest(int? PrintTemplateId);
 public record SetRequestRatingRequest(int? Rating, string? Comment = null);
 public record CompleteMeasurementRequest(
     decimal? ValueDecimal = null, string? ValueText = null, bool? ValueBoolean = null, DateTime? ValueDate = null);

@@ -124,6 +124,16 @@ export function useSetRequestAddress() {
   });
 }
 
+export function useSetRequestPrintTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, printTemplateId }: { requestId: number; printTemplateId: number | null }) => {
+      await apiClient.put(`/api/requests/${requestId}/print-template`, { printTemplateId });
+    },
+    onSuccess: (_, { requestId }) => invalidateRequest(qc, requestId),
+  });
+}
+
 export function useToggleTask() {
   const qc = useQueryClient();
   return useMutation({

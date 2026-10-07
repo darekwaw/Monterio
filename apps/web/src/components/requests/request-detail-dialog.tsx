@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   useRequestById, useAddRequestActivity, useAssignRequest, useChangeRequestStatus,
   useSetScheduledDate, useSetCompletionDate, useSetRequestAddress, useUploadAttachment,
+  useSetRequestPrintTemplate,
 } from '@/hooks/useRequests';
+import { usePrintTemplates } from '@/hooks/usePrintTemplates';
 import { useServiceGroups, useServiceGroupMembers } from '@/hooks/useServiceGroups';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
@@ -33,6 +35,8 @@ export function RequestDetailDialog({ requestId, onClose }: { requestId: number 
   const completionDateMut = useSetCompletionDate();
   const addressMut = useSetRequestAddress();
   const uploadMut = useUploadAttachment();
+  const printTemplateMut = useSetRequestPrintTemplate();
+  const { data: printTemplates } = usePrintTemplates();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [serviceGroupId, setServiceGroupId] = useState('');
@@ -82,9 +86,21 @@ export function RequestDetailDialog({ requestId, onClose }: { requestId: number 
             {Object.entries(REQUEST_STATUS_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
           </select>
           {request.rating != null && <Stars value={request.rating} />}
+          <select
+            value={request.printTemplateId?.toString() ?? ''}
+            onChange={e => printTemplateMut.mutate({
+              requestId: request.id,
+              printTemplateId: e.target.value ? Number(e.target.value) : null,
+            })}
+            title="Szablon protokołu"
+            className="ml-auto max-w-[11rem] rounded-lg border border-stone-300 bg-white px-2 py-1 text-xs focus:border-accent-500 focus:outline-none"
+          >
+            <option value="">Szablon: domyślny</option>
+            {printTemplates?.filter(t => t.isActive).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
           <button
             onClick={() => openAuthenticatedFile(`/api/requests/${request.id}/protocol.pdf`)}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
           >
             <Printer className="h-3.5 w-3.5" /> Drukuj protokół
           </button>

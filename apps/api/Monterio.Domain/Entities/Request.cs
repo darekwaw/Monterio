@@ -35,6 +35,10 @@ public class Request : BaseEntity, ISoftDelete
     public int? ContractorId { get; private set; }
     public int? EmployeeId { get; private set; }
 
+    /// <summary>Szablon protokołu wybrany dla tego zlecenia (np. montaż vs wymiarowanie). Null =
+    /// użyj domyślnego aktywnego szablonu.</summary>
+    public int? PrintTemplateId { get; private set; }
+
     public int CreatedByEmployeeId { get; private set; }
 
     public Company Company { get; private set; } = null!;
@@ -45,6 +49,7 @@ public class Request : BaseEntity, ISoftDelete
     public Contractor? Contractor { get; private set; }
     public Employee? Employee { get; private set; }
     public Employee CreatedByEmployee { get; private set; } = null!;
+    public PrintTemplate? PrintTemplate { get; private set; }
 
     public ICollection<RequestActivity> Activities { get; private set; } = [];
     public ICollection<RequestAttachment> Attachments { get; private set; } = [];
@@ -78,6 +83,8 @@ public class Request : BaseEntity, ISoftDelete
     public void SetCompletionDate(DateTime? date) { CompletionDate = date; SetUpdatedAt(); }
 
     public void SetAddress(int? addressId) { AddressId = addressId; SetUpdatedAt(); }
+
+    public void SetPrintTemplate(int? printTemplateId) { PrintTemplateId = printTemplateId; SetUpdatedAt(); }
 
     public void ChangeStatus(RequestStatusEnum status)
     {

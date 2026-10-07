@@ -1,0 +1,45 @@
+# Monterio w Dockerze — projekt Compose "monterio" (w Docker Desktop widoczny jako jedna grupa kontenerów).
+# Uruchomienie: docker compose up -d   (zmienne z pliku .env obok; generuje je install.ps1)
+name: monterio
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${MONTERIO_SA_PASSWORD:?Brak MONTERIO_SA_PASSWORD w .env}
+    volumes:
+      - monterio-db:/var/opt/mssql
+    # Baza jest dostępna tylko dla API w sieci compose — port celowo nie jest publikowany.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    image: petrosoft/monterio:${MONTERIO_VERSION:-latest}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${MONTERIO_PORT:-5020}:5020"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=MonterioDb;User Id=sa;Password='${MONTERIO_SA_PASSWORD}';TrustServerCertificate=True;"
+      EmployeeJwt__Secret: ${MONTERIO_JWT_SECRET:?Brak MONTERIO_JWT_SECRET w .env}
+      RatingLink__Secret: ${MONTERIO_RATING_SECRET:?Brak MONTERIO_RATING_SECRET w .env}
+      RatingLink__WebBaseUrl: ${MONTERIO_PUBLIC_URL:-http://localhost:5020}
+      Cors__Origins__0: ${MONTERIO_PUBLIC_URL:-http://localhost:5020}
+    volumes:
+      - monterio-uploads:/data/uploads
+
+volumes:
+  monterio-db:
+  monterio-uploads:

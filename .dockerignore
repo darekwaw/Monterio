@@ -1,0 +1,28 @@
+# Sekrety i konfiguracja lokalna — nigdy do obrazu
+**/.env
+**/.env.*
+**/appsettings.Local.json
+**/appsettings.Development.json
+**/*.bak
+**/*.pfx
+**/*.key
+**/*.pem
+
+# Artefakty budowania i zależności (odtwarzane w obrazie)
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/out/
+**/uploads/
+
+# Repo, IDE, reszta monorepo niepotrzebna API/frontendowi
+.git/
+.gitignore
+.vs/
+.vscode/
+apps/mobile/
+installer/
+docs/
+docker/
+*.md

@@ -27,3 +27,7 @@ apps/mobile/ios/
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker
+docker/.env
+docker/dist/

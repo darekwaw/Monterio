@@ -166,6 +166,37 @@ Okno trzeba otworzyć SYNCHRONICZNIE w handlerze kliknięcia (`window.open('', '
 `await`), inaczej przeglądarka blokuje je jako popup, bo samo pobranie danych jest asynchroniczne.
 **Jeśli dodajesz nowy link do pobrania czegokolwiek z API — użyj tego helpera, nie `<a href>`.**
 
+### Przechowywanie załączników — dysk albo chmura (2026-10-07)
+Odpowiednik CMMS-owego `DocumentStorage`, ale odchudzony i naprawiający jego luki. UI: `/przechowywanie`
+(tylko rola Dispatcher), API: `StorageController` (`GET/PUT /api/storage`, `POST .../test`, `POST .../migrate`).
+- **Dostawcy** (`Infrastructure/Storage/*StorageBackend.cs`, interfejs `IStorageBackend`): `Local` (domyślny,
+  dysk serwera), `OneDrive` (Graph, client credentials — zwykły HttpClient, bez SDK), `GoogleDrive`
+  (konto serwisowe JSON LUB OAuth refresh token), `Dropbox` (refresh token + App Key/Secret), `S3`
+  (Amazon S3 / MinIO / Wasabi...). CMMS ma dodatkowo Synology/UNC/SFTP — pominięte (to nie chmura; dopisać
+  tylko na żądanie klienta: wystarczy nowa klasa `IStorageBackend` zarejestrowana w DI).
+- **Zasada kluczowa**: każdy `RequestAttachment` pamięta `StorageProvider` — odczyt idzie do dostawcy, u którego
+  plik leży, nie do aktywnego. Zmiana dostawcy nie gubi starych plików (w CMMS gubi). Konfiguracja jest
+  trzymana per dostawca (`StorageProviderConfig`, najwyżej jeden `IsActive`), a nie jako jeden "bieżący" rekord.
+- **Formularz sterowany backendem**: `GET /api/storage` zwraca opis pól każdego dostawcy (`Fields`) — frontend
+  nie ma zahardkodowanej listy pól. Nowy dostawca = zero zmian we froncie.
+- **Sekrety**: szyfrowane ASP.NET Data Protection (`StorageService`), NIGDY nie wracają do przeglądarki
+  (`SecretsSet` = lista kluczy z zapisaną wartością). Puste pole sekretu przy zapisie = zostaw stare.
+  **Klucze Data Protection leżą w `{UploadPath}/.keys`** (nadpisanie: `DataProtection:KeysPath`) — muszą
+  przeżyć restart/aktualizację/odtworzenie kontenera, inaczej zapisane sekrety chmury stają się nieczytelne
+  (UI pokaże wtedy dostawcę jako nieskonfigurowanego). Backup `uploads/` = backup kluczy. W Dockerze to wolumen.
+- **Zapis ustawień zawsze poprzedza test** (zapis + odczyt + usunięcie pliku próbnego) — błędna konfiguracja
+  nie przejdzie do produkcji i nie zablokuje uploadów. Osobny przycisk "Testuj połączenie" bez zapisu.
+- **Migracja** (`POST /api/storage/migrate`): kopiuje załączniki `Local` → aktywna chmura i zmienia wskaźnik w
+  bazie; plików lokalnych NIE kasuje (świadomie — decyzja po sprawdzeniu wyniku).
+- **Brak kasowania załączników** w Monterio (jak dotąd), więc `DeleteAsync` backendu służy tylko do sprzątania
+  po teście.
+- **Nie przetestowane na prawdziwych kontach**: zweryfikowano end-to-end tylko S3 (emulator s3rver) + Local.
+  OneDrive/Google Drive/Dropbox zbudowane i przechodzą walidację pól, ale nie były odpalone na realnym
+  koncie — pierwsze podłączenie u klienta zacząć od "Testuj połączenie". Google: konto serwisowe nie ma
+  własnego miejsca na zwykłym "Moim dysku" → potrzebny Dysk współdzielony; konto prywatne = tryb OAuth.
+- Brak automatycznego flow OAuth ("Połącz konto") — refresh token wkleja się ręcznie (świadome: wymagałoby
+  publicznego redirect URI, a wdrożenia są on-prem pod różnymi adresami).
+
 ## Zaimplementowane moduły
 
 ### Backend (kontrolery, `apps/api/Monterio.API/Controllers/`)
@@ -181,7 +212,7 @@ tasks toggle/measurement, attachments upload/download, protocol.pdf), `PrintTemp
 różnicy dni, okno szczegółów z zakładkami Usługi/Załączniki), `/analizy` (zob. niżej), `/klienci`,
 `/lokalizacje` (drzewo, ikony edycji/dodawania na stałe widoczne, nie tylko na hover), `/katalog`
 (usługi+czynności+punkty pomiarowe, wszystko edytowalne), `/wykonawcy` (grupy serwisowe, firmy,
-instalatorzy — z gwiazdkami), `/pracownicy` (zarządzanie kontami dyspozytorów), `/szablony-wydruku`
+instalatorzy — z gwiazdkami), `/pracownicy` (zarządzanie kontami dyspozytorów), `/przechowywanie` (dysk/chmura na załączniki), `/szablony-wydruku`
 (CRUD + `RichTextEditor` WYSIWYG), `/login`.
 
 ### Analizy (2026-09-29) — świadomie NIE port CMMS-owego `/analytics`

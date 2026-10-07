@@ -75,6 +75,7 @@ public class RequestAttachmentConfiguration : IEntityTypeConfiguration<RequestAt
         builder.Property(a => a.FileName).IsRequired().HasMaxLength(300);
         builder.Property(a => a.ContentType).IsRequired().HasMaxLength(200);
         builder.Property(a => a.StoragePath).IsRequired().HasMaxLength(1000);
+        builder.Property(a => a.StorageProvider).IsRequired().HasMaxLength(30).HasDefaultValue("Local");
 
         builder.HasOne(a => a.Request).WithMany(r => r.Attachments).HasForeignKey(a => a.RequestId)
             .OnDelete(DeleteBehavior.Cascade);

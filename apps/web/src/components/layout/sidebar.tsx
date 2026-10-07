@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useLogout } from '@/hooks/useAuth';
 import {
-  LayoutDashboard, ClipboardList, Users, MapPin, BookOpen, Briefcase, Hammer, LogOut, FileText, UserCog, BarChart3,
+  LayoutDashboard, ClipboardList, Users, MapPin, BookOpen, Briefcase, Hammer, LogOut, FileText, UserCog, BarChart3, Cloud,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/wykonawcy', label: 'Wykonawcy', icon: Briefcase },
   { href: '/szablony-wydruku', label: 'Szablony wydruku', icon: FileText },
   { href: '/pracownicy', label: 'Pracownicy', icon: UserCog },
+  { href: '/przechowywanie', label: 'Przechowywanie plików', icon: Cloud },
 ];
 
 export function Sidebar({ fullName, role }: { fullName: string; role: string }) {

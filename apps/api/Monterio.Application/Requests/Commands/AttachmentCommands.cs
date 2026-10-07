@@ -14,11 +14,11 @@ public class UploadAttachmentCommandHandler(IApplicationDbContext db, IFileStora
 {
     public async Task<int> Handle(UploadAttachmentCommand request, CancellationToken ct)
     {
-        var storagePath = await storage.SaveAsync(request.FileName, request.Content, ct);
+        var stored = await storage.SaveAsync(request.FileName, request.ContentType, request.Content, ct);
 
         var attachment = RequestAttachment.Create(
             request.RequestId, request.FileName, request.ContentType, request.Content.LongLength,
-            storagePath, request.UploadedByEmployeeId);
+            stored.Provider, stored.Path, request.UploadedByEmployeeId);
 
         await db.RequestAttachments.AddAsync(attachment, ct);
         await db.SaveChangesAsync(ct);

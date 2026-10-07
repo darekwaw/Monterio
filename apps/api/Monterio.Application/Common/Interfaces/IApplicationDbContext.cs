@@ -21,6 +21,7 @@ public interface IApplicationDbContext
     DbSet<RequestActivityTask> RequestActivityTasks { get; }
     DbSet<RequestAttachment> RequestAttachments { get; }
     DbSet<PrintTemplate> PrintTemplates { get; }
+    DbSet<StorageProviderConfig> StorageProviderConfigs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

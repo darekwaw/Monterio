@@ -11,6 +11,9 @@ public class RequestAttachment : BaseEntity
     public string ContentType { get; private set; } = string.Empty;
     public long FileSize { get; private set; }
     public string StoragePath { get; private set; } = string.Empty;
+    /// <summary>Gdzie fizycznie leży plik (<see cref="StorageProviders"/>) — zapamiętane per załącznik,
+    /// żeby zmiana aktywnego dostawcy nie "gubiła" starszych plików.</summary>
+    public string StorageProvider { get; private set; } = StorageProviders.Local;
     public int UploadedByEmployeeId { get; private set; }
 
     public Request Request { get; private set; } = null!;
@@ -19,14 +22,22 @@ public class RequestAttachment : BaseEntity
     private RequestAttachment() { }
 
     public static RequestAttachment Create(int requestId, string fileName, string contentType,
-        long fileSize, string storagePath, int uploadedByEmployeeId)
+        long fileSize, string storageProvider, string storagePath, int uploadedByEmployeeId)
         => new()
         {
             RequestId = requestId,
             FileName = fileName,
             ContentType = contentType,
             FileSize = fileSize,
+            StorageProvider = storageProvider,
             StoragePath = storagePath,
             UploadedByEmployeeId = uploadedByEmployeeId,
         };
+
+    public void MoveTo(string storageProvider, string storagePath)
+    {
+        StorageProvider = storageProvider;
+        StoragePath = storagePath;
+        SetUpdatedAt();
+    }
 }

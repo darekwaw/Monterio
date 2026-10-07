@@ -17,7 +17,7 @@ public class GetAttachmentQueryHandler(IApplicationDbContext db, IFileStorageSer
             .FirstOrDefaultAsync(a => a.Id == request.AttachmentId && a.RequestId == request.RequestId, ct);
         if (attachment is null) return null;
 
-        var content = await storage.ReadAsync(attachment.StoragePath, ct);
+        var content = await storage.ReadAsync(attachment.StorageProvider, attachment.StoragePath, ct);
         return new AttachmentFileResult(attachment.FileName, attachment.ContentType, content);
     }
 }

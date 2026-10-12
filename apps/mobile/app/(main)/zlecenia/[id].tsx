@@ -69,7 +69,7 @@ export default function RequestDetailScreen() {
           <Text style={styles.number}>{request.number}</Text>
           <View style={[styles.badge, { backgroundColor: `${REQUEST_STATUS_COLORS[request.status]}1a` }]}>
             <Text style={[styles.badgeText, { color: REQUEST_STATUS_COLORS[request.status] }]}>
-              {request.statusName}
+              {REQUEST_STATUS_LABELS[request.status] ?? request.statusName}
             </Text>
           </View>
         </View>

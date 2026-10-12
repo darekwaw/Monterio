@@ -42,7 +42,7 @@ function RequestCard({ item, onPress }: { item: RequestListItem; onPress: () => 
         <View style={styles.cardHeaderRight}>
           {item.canClaim
             ? <View style={[styles.badge, styles.poolBadge]}><Text style={[styles.badgeText, styles.poolBadgeText]}>Do przejęcia</Text></View>
-            : <StatusBadge status={item.status} label={item.statusName} />}
+            : <StatusBadge status={item.status} label={REQUEST_STATUS_LABELS[item.status] ?? item.statusName} />}
           {(addressLine || item.customerPhone) && (
             <View style={styles.iconRow}>
               {addressLine && (

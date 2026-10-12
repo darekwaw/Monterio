@@ -7,7 +7,7 @@ import { useForegroundRefetch } from '@/hooks/useForegroundRefetch';
 import { StarRating } from '@/components/star-rating';
 import { formatLongDate, formatTime, formatWhen } from '@/lib/format';
 import { formatAddressLine, openInMaps } from '@/lib/actions';
-import { REQUEST_STATUS_COLORS, type RequestListFilter, type RequestListItem } from '@/types';
+import { REQUEST_STATUS_COLORS, REQUEST_STATUS_LABELS, type RequestListFilter, type RequestListItem } from '@/types';
 
 const ANTHRACITE = '#2c2a28';
 const AMBER = '#854f0b';
@@ -165,7 +165,7 @@ export default function DashboardScreen() {
                       </Text>
                     </View>
                     <View style={[styles.badge, { backgroundColor: `${color}1a` }]}>
-                      <Text style={[styles.badgeText, { color }]}>{r.statusName}</Text>
+                      <Text style={[styles.badgeText, { color }]}>{REQUEST_STATUS_LABELS[r.status] ?? r.statusName}</Text>
                     </View>
                   </Pressable>
                 );

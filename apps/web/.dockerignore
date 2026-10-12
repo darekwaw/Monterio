@@ -1,0 +1,11 @@
+**/.env
+**/.env.*
+**/node_modules/
+**/.next/
+**/out/
+**/*.tsbuildinfo
+**/*.pem
+**/*.key
+.git/
+Dockerfile
+.dockerignore

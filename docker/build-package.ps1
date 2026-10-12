@@ -19,8 +19,14 @@ $env:MONTERIO_SA_PASSWORD = 'build-only'
 $env:MONTERIO_JWT_SECRET = 'build-only'
 $env:MONTERIO_RATING_SECRET = 'build-only'
 
-Write-Host '==> Budowa obrazu API+frontend'
-docker compose -f "$PSScriptRoot\docker-compose.yml" build api
+# Siec z inspekcja TLS (np. firmowe proxy): jesli jest docker\corp-ca.crt, build uzywa go jako sekretu
+# (npm/NuGet/curl ufaja temu CA tylko w czasie budowania, certyfikat nie trafia do obrazu). Brak = pusty plik, build bez zmian.
+$caFile = Join-Path $PSScriptRoot 'corp-ca.crt'
+if (-not (Test-Path $caFile)) { New-Item -ItemType File -Path $caFile | Out-Null }
+elseif ((Get-Item $caFile).Length -gt 0) { Write-Host '==> Uzywam firmowego CA z docker\corp-ca.crt (tylko na czas budowania)' }
+
+Write-Host '==> Budowa obrazow: API i web'
+docker compose -f "$PSScriptRoot\docker-compose.yml" build api web
 if ($LASTEXITCODE -ne 0) { throw 'Budowa obrazu nieudana' }
 
 Write-Host '==> Obraz SQL Server'
@@ -34,7 +40,7 @@ Remove-Item -Recurse -Force $pkg -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path "$pkg\images" | Out-Null
 
 Write-Host '==> Zapis obrazow do .tar (setki MB)'
-docker save -o "$pkg\images\monterio-images.tar" "petrosoft/monterio:$version" $db
+docker save -o "$pkg\images\monterio-images.tar" "petrosoft/monterio:$version" "petrosoft/monterio-web:$version" $db
 if ($LASTEXITCODE -ne 0) { throw 'docker save nieudany' }
 
 Copy-Item "$PSScriptRoot\docker-compose.yml" $pkg

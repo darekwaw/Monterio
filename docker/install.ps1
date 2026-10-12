@@ -4,6 +4,7 @@
 # Aktualizacja = uruchom ponownie nowa paczke: .env i dane (wolumeny) zostaja.
 param(
     [int] $Port = 5020,
+    [int] $WebPort = 3010,
     [string] $PublicUrl = ''
 )
 # Continue (nie Stop): w PowerShell 5.1 stderr natywnych polecen (np. docker info przy wylaczonym demonie) bylby wyjatkiem; bledy pilnuje $LASTEXITCODE.
@@ -47,10 +48,13 @@ if (Test-Path $envFile) {
     Write-Host '.env istnieje - pozostawiam sekrety i ustawienia, aktualizuje tylko wersje.'
     $lines = Get-Content $envFile | Where-Object { $_ -notmatch '^MONTERIO_VERSION=' }
     Set-Content -Path $envFile -Value (@("MONTERIO_VERSION=$version") + $lines) -Encoding ASCII
+    # Aktualizacja z wersji sprzed kontenera web: brak MONTERIO_WEB_PORT = domyslny 3010 (z compose);
+    # MONTERIO_PUBLIC_URL zostaje - API nadal serwuje wbudowany interfejs, wiec stare linki oceny dzialaja.
 } else {
-    if (-not $PublicUrl) { $PublicUrl = "http://localhost:$Port" }
+    if (-not $PublicUrl) { $PublicUrl = "http://localhost:$WebPort" }
     $content = @(
         "MONTERIO_VERSION=$version",
+        "MONTERIO_WEB_PORT=$WebPort",
         "MONTERIO_PORT=$Port",
         "MONTERIO_PUBLIC_URL=$($PublicUrl.TrimEnd('/'))",
         "MONTERIO_SA_PASSWORD=$(New-Secret 24)Aa1",
@@ -83,6 +87,17 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 if ($status -ne 'healthy') {
     Write-Host 'API nie zglosilo gotowosci. Sprawdz logi: docker compose logs api' -ForegroundColor Yellow
+    exit 1
+}
+
+$webStatus = ''
+for ($i = 0; $i -lt 20; $i++) {
+    $webStatus = (docker inspect --format '{{.State.Health.Status}}' monterio-web-1 2>$null)
+    if ($webStatus -eq 'healthy') { break }
+    Start-Sleep -Seconds 3
+}
+if ($webStatus -ne 'healthy') {
+    Write-Host 'Interfejs www nie zglosil gotowosci. Sprawdz logi: docker compose logs web' -ForegroundColor Yellow
     exit 1
 }
 

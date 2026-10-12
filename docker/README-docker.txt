@@ -10,13 +10,15 @@ Instalacja
 1. Rozpakuj paczke do dowolnego folderu (np. C:\Monterio-Docker) i zostaw go na stale -
    w nim leza docker-compose.yml i plik .env z sekretami.
 2. Uruchom Zainstaluj-Monterio.cmd (dwuklik).
-   Opcjonalnie inny port / adres: Zainstaluj-Monterio.cmd -Port 8080 -PublicUrl http://nazwa-komputera:8080
+   Opcjonalnie inne porty / adres: Zainstaluj-Monterio.cmd -WebPort 8080 -Port 5020 -PublicUrl http://nazwa-komputera:8080
+   (-WebPort = interfejs www, -Port = API dla aplikacji mobilnej, -PublicUrl = adres www w linkach/QR oceny)
 3. Skrypt zaladuje obrazy, wygeneruje .env z losowymi sekretami i uruchomi projekt "monterio".
-4. Otworz http://localhost:5020. Pierwsze logowanie: admin / Admin123! (zmien haslo od razu).
+4. Otworz http://localhost:3010. Pierwsze logowanie: admin / Admin123! (zmien haslo od razu).
 
 W Docker Desktop
-Zakladka Containers -> projekt (kolekcja) "monterio" z dwoma kontenerami:
-- api - aplikacja Monterio (API + interfejs www, port 5020),
+Zakladka Containers -> projekt (kolekcja) "monterio" z trzema kontenerami:
+- web - interfejs www (port 3010; ten adres otwierasz w przegladarce),
+- api - API Monterio (port 5020; z niego korzysta aplikacja mobilna instalatora),
 - db  - SQL Server (dostepny tylko dla api, port nie jest wystawiony na zewnatrz).
 Przyciskami Start/Stop przy projekcie wlaczasz i wylaczasz calosc. Kontenery startuja same
 po uruchomieniu Docker Desktop (restart: unless-stopped).
@@ -38,6 +40,7 @@ Usuniecie
 
 Logi
   docker compose logs api
+  docker compose logs web
 
 Aplikacja mobilna instalatora: adres serwera wpisuje sie na ekranie logowania
 (http://<adres-komputera>:5020). Wymaga reguly zapory dla portu i dostepu z sieci telefonu.

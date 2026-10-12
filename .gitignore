@@ -31,3 +31,6 @@ Thumbs.db
 # Docker
 docker/.env
 docker/dist/
+
+# Firmowy CA inspekcji TLS (lokalny, opcjonalny sekret budowania - patrz docker/README-docker.txt)
+docker/corp-ca.crt

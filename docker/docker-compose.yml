@@ -33,6 +33,8 @@ services:
     ports:
       - "${MONTERIO_PORT:-5020}:5020"
     environment:
+      # Strefa czasowa procesu API: "dzis"/"ten tydzien" na pulpicie i terminy zlecen liczone wg czasu serwera.
+      TZ: ${MONTERIO_TZ:-Europe/Warsaw}
       ConnectionStrings__DefaultConnection: "Server=db;Database=MonterioDb;User Id=sa;Password='${MONTERIO_SA_PASSWORD}';TrustServerCertificate=True;"
       EmployeeJwt__Secret: ${MONTERIO_JWT_SECRET:?Brak MONTERIO_JWT_SECRET w .env}
       RatingLink__Secret: ${MONTERIO_RATING_SECRET:?Brak MONTERIO_RATING_SECRET w .env}

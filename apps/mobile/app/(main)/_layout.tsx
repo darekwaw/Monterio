@@ -9,7 +9,7 @@ export default function MainLayout() {
 
   return (
     <Stack screenOptions={{ headerStyle: { backgroundColor: '#fff' }, headerTintColor: '#1c1917' }}>
-      <Stack.Screen name="zlecenia/index" options={{ title: 'Moje zlecenia' }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="zlecenia/[id]" options={{ title: 'Zlecenie' }} />
     </Stack>
   );

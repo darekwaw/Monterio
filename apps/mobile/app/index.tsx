@@ -13,5 +13,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={session ? '/(main)/zlecenia' : '/login'} />;
+  return <Redirect href={session ? '/(main)/pulpit' : '/login'} />;
 }

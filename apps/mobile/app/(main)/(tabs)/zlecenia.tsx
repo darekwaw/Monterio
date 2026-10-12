@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, Alert, ActivityIndicator } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMyRequests, useClaimRequest } from '@/hooks/useRequests';
 import { useForegroundRefetch } from '@/hooks/useForegroundRefetch';
-import { useAuth } from '@/context/auth-context';
 import { REQUEST_STATUS_LABELS, REQUEST_STATUS_COLORS, type RequestListItem } from '@/types';
 import { formatDate } from '@/lib/format';
 import { callPhone, formatAddressLine, openInMaps } from '@/lib/actions';
+import { REQUEST_FILTER_LABELS, isRequestListFilter, matchesFilter } from '@/lib/request-filters';
 
 const STATUS_FILTERS: { label: string; value: number | undefined }[] = [
   { label: 'Wszystkie', value: undefined },
@@ -92,24 +92,20 @@ function RequestCard({ item, onPress }: { item: RequestListItem; onPress: () => 
 
 export default function RequestListScreen() {
   const router = useRouter();
-  const { logout, session } = useAuth();
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const quickFilter = isRequestListFilter(params.filter) ? params.filter : undefined;
   const [status, setStatus] = useState<number | undefined>(undefined);
-  const { requests, isLoading, isFetching, refetch } = useMyRequests(status);
+  const { requests: all, isLoading, isFetching, refetch } = useMyRequests(status);
+  const requests = quickFilter ? all.filter((r) => matchesFilter(r, quickFilter)) : all;
   useForegroundRefetch(refetch);
 
   return (
     <View style={styles.flex}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable onPress={() => { void logout(); }} hitSlop={12}>
-              <Text style={styles.logout}>Wyloguj</Text>
-            </Pressable>
-          ),
-        }}
-      />
-
-      <Text style={styles.greeting}>Cześć, {session?.fullName}</Text>
+      {quickFilter && (
+        <Pressable style={styles.activeFilter} onPress={() => router.setParams({ filter: undefined })}>
+          <Text style={styles.activeFilterText}>Filtr: {REQUEST_FILTER_LABELS[quickFilter]}  ✕</Text>
+        </Pressable>
+      )}
 
       <View style={styles.filters}>
         <FlatList
@@ -147,8 +143,11 @@ export default function RequestListScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#fafaf9' },
-  greeting: { fontSize: 14, color: '#78716c', paddingHorizontal: 16, paddingTop: 12 },
-  logout: { color: '#2563eb', fontSize: 15, fontWeight: '500' },
+  activeFilter: {
+    alignSelf: 'flex-start', marginLeft: 16, marginTop: 12, paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 999, backgroundColor: '#faeeda',
+  },
+  activeFilterText: { fontSize: 13, color: '#633806', fontWeight: '600' },
   filters: { paddingVertical: 12 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,

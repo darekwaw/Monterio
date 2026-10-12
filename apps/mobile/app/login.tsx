@@ -30,7 +30,7 @@ export default function LoginScreen() {
     try {
       await saveServerUrl(serverUrl);
       await login(loginIdentifier.trim(), pin);
-      router.replace('/(main)/zlecenia');
+      router.replace('/(main)/pulpit');
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error

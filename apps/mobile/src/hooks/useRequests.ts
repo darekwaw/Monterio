@@ -1,6 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import type { PagedResult, RequestDetail, RequestListItem } from '@/types';
+import type { DashboardData, PagedResult, RequestDetail, RequestListItem } from '@/types';
+
+export function useDashboard() {
+  return useQuery({
+    // Klucz pod 'requests' — każda zmiana zlecenia (invalidateRequest) odświeża też pulpit.
+    queryKey: ['requests', 'dashboard'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<DashboardData>('/api/me/dashboard');
+      return data;
+    },
+    refetchInterval: 30_000,
+  });
+}
 
 export function useMyRequests(status?: number) {
   const query = useQuery({
@@ -33,6 +45,7 @@ export function useRequestById(id: number | null) {
 function invalidateRequest(qc: ReturnType<typeof useQueryClient>, id: number) {
   qc.invalidateQueries({ queryKey: ['requests', 'detail', id] });
   qc.invalidateQueries({ queryKey: ['requests', 'mine'] });
+  qc.invalidateQueries({ queryKey: ['requests', 'dashboard'] });
 }
 
 export function useClaimRequest() {

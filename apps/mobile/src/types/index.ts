@@ -46,6 +46,18 @@ export interface RequestListItem {
   canClaim: boolean;
 }
 
+export interface DashboardData {
+  fullName: string;
+  contractorName: string | null;
+  counters: { today: number; inProgress: number; toClaim: number; thisWeek: number; completedThisMonth: number };
+  rating: { average: number | null; count: number; lastRating: number | null; lastComment: string | null };
+  nextRequest: RequestListItem | null;
+  todayPlan: RequestListItem[];
+}
+
+/** Filtry listy zleceń wywoływane z kafelków pulpitu (query param `filter`). */
+export type RequestListFilter = 'today' | 'inprogress' | 'pool' | 'week' | 'month';
+
 export interface RequestActivityTask {
   id: number;
   description: string;
